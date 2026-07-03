@@ -1,18 +1,21 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-03T11:50:59.200Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-03T11:57:11.609Z.
 
 ## Overview
 
-Branding update fix: align import styles for default-exported client components.
+INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and article research.
 
 **Repository:** `arenaintelligence`  
 **File count:** 42
 
 ## Features
 
-- INTELLIGENCE by Position2 branding
-- AI agent workspace
+- Keyword research agent
+- Content research agent
+- Article recommendation agent
+- Execution history
+- Secure OpenAI API key storage
 
 ## Tech Stack
 
@@ -152,7 +155,7 @@ Branding update fix: align import styles for default-exported client components.
 
 ## Latest Change
 
-- **Updated at:** 2026-07-03T11:50:59.200Z
+- **Updated at:** 2026-07-03T11:57:11.609Z
 - **Request:** Update the existing application branding only.
 
 ### Required Change

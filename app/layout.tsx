@@ -6,20 +6,20 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'INTELLIGENCE by Position2',
-  description: 'INTELLIGENCE by Position2 — an AI-powered platform for keyword research, content research, and article recommendations.',
+  description: 'INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and article research.',
+  keywords: ['INTELLIGENCE by Position2', 'AI agents', 'keyword research', 'content research', 'SEO'],
   openGraph: {
     title: 'INTELLIGENCE by Position2',
-    description: 'INTELLIGENCE by Position2 — an AI-powered platform for keyword research, content research, and article recommendations.',
+    description: 'INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and article research.',
     type: 'website',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'INTELLIGENCE by Position2',
-    description: 'INTELLIGENCE by Position2 — an AI-powered platform for keyword research, content research, and article recommendations.',
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <html lang="en">
       <body className={inter.className}>{children}</body>

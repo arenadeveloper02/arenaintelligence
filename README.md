@@ -1,11 +1,14 @@
 # arena-planner-ai
 
-Branding update fix: align import styles for default-exported client components.
+INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and article research.
 
 ## Features
 
-- INTELLIGENCE by Position2 branding
-- AI agent workspace
+- Keyword research agent
+- Content research agent
+- Article recommendation agent
+- Execution history
+- Secure OpenAI API key storage
 
 ## Tech Stack
 
@@ -14,12 +17,6 @@ Branding update fix: align import styles for default-exported client components.
 - Tailwind CSS v3
 - TypeScript
 - Prisma + PostgreSQL (Neon on Vercel)
-
-## Routes
-
-- `/`
-- `/dashboard`
-- `/login`
 
 ## Getting Started
 
