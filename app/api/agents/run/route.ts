@@ -42,7 +42,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           {
             role: 'system',
             content:
-              'You are Arena Planner AI, an expert SEO and content strategy assistant. Respond with clear, well-structured markdown.',
+              'You are INTELLIGENCE by Position2, an expert SEO and content strategy assistant. Respond with clear, well-structured markdown.',
           },
           { role: 'user', content: prompt },
         ],

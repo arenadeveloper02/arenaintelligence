@@ -1,33 +1,53 @@
-# Arena Planner AI
+# arena-planner-ai
 
-A premium, dark-theme multi-agent SaaS platform for SEO and content research. Bring your own OpenAI API key and run three specialized AI agents — Keyword Research, Content Research, and Article Recommendation — with full execution history.
+INTELLIGENCE by Position2 — premium AI agent platform for keyword research, content research, and article recommendations.
 
 ## Features
 
-- Futuristic landing page with animated particle canvas, floating gradient orbs and glassmorphism cards
-- Email/password auth with bcrypt hashing and httpOnly JWT cookie sessions
-- Middleware-protected dashboard, settings, history and agent routes
-- OpenAI API key management: verified against the OpenAI API, encrypted with AES-256-GCM at rest, masked in the UI
-- Agent gating — agents are disabled until a valid key is configured
-- Three agent workflows with animated loading, progress indicator, markdown output and CSV/report export
-- Execution history with search, expandable results and per-report download
-- All OpenAI requests proxied through backend API routes — keys never reach the browser
+- Keyword research agent
+- Content research agent
+- Article recommendation agent
+- Execution history
 
 ## Tech Stack
 
-- Next.js 15 (App Router) + React 19 + TypeScript (strict)
+- Next.js ^15.3.3 (App Router)
+- React ^19.0.0
 - Tailwind CSS v3
-- Prisma + Neon Postgres
-- jsonwebtoken + bcryptjs for auth, Node crypto (AES-256-GCM) for key encryption
-- lucide-react icons
+- TypeScript
+- Prisma + PostgreSQL (Neon on Vercel)
 
-## Local Setup
+## Routes
 
-1. `npm install`
-2. Copy `.env.example` to `.env` and set `DATABASE_URL` to a Postgres connection string
-3. `npx prisma db push`
-4. `npm run dev` and open http://localhost:3000
+- `/`
+- `/dashboard`
+- `/login`
+- `/settings`
+
+## Getting Started
+
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+## Database
+
+1. Copy `.env.example` to `.env` for local development
+2. Set `DATABASE_URL` to your Postgres connection string
+3. Run `npx prisma db push` before `npm run dev` if tables are missing
+
+On Vercel, `DATABASE_URL` is injected when Neon is connected to the project.
+
+## Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — production build (runs Prisma generate/push when configured)
+- `npm run start` — run the production server locally
 
 ## Deploy
 
-On Vercel with a connected Neon database, `DATABASE_URL` is injected automatically. The build script runs `prisma generate && prisma db push && next build`. Optionally set `AUTH_SECRET` and `ENCRYPTION_SECRET` env vars for production-grade session signing and key encryption.
+This project is intended for deployment on [Vercel](https://vercel.com). Connect the GitHub repository and deploy the `main` branch.

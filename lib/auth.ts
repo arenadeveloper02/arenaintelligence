@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs'
 import { createHash, randomBytes, createCipheriv, createDecipheriv } from 'crypto'
 import type { SessionUser } from '@/lib/types'
 
-const AUTH_SECRET = process.env.AUTH_SECRET ?? 'arena-planner-ai-dev-secret-change-in-production'
+const AUTH_SECRET = process.env.AUTH_SECRET ?? 'intelligence-by-position2-dev-secret-change-in-production'
 const COOKIE_NAME = 'arena_session'
 
 export async function hashPassword(password: string): Promise<string> {

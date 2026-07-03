@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { getApiKeyStatus } from '@/lib/actions'
 import AppShell from '@/components/AppShell'
-import SettingsClient from '@/components/SettingsClient'
+import { SettingsClient } from '@/components/SettingsClient'
 
 export const dynamic = 'force-dynamic'
 
