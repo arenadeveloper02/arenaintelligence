@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 import { getCurrentUser } from '@/lib/auth'
 import { getDashboardData } from '@/lib/actions'
 import AppShell from '@/components/AppShell'
-import { DashboardClient } from '@/components/DashboardClient'
+import DashboardClient from '@/components/DashboardClient'
 
 export const dynamic = 'force-dynamic'
 

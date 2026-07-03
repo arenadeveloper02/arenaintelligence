@@ -1,20 +1,18 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-03T11:15:23.929Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-03T11:50:59.200Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — premium AI agent platform for keyword research, content research, and article recommendations.
+Branding update fix: align import styles for default-exported client components.
 
 **Repository:** `arenaintelligence`  
 **File count:** 42
 
 ## Features
 
-- Keyword research agent
-- Content research agent
-- Article recommendation agent
-- Execution history
+- INTELLIGENCE by Position2 branding
+- AI agent workspace
 
 ## Tech Stack
 
@@ -154,7 +152,7 @@ INTELLIGENCE by Position2 — premium AI agent platform for keyword research, co
 
 ## Latest Change
 
-- **Updated at:** 2026-07-03T11:15:23.929Z
+- **Updated at:** 2026-07-03T11:50:59.200Z
 - **Request:** Update the existing application branding only.
 
 ### Required Change

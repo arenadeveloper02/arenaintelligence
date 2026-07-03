@@ -1,13 +1,11 @@
 # arena-planner-ai
 
-INTELLIGENCE by Position2 — premium AI agent platform for keyword research, content research, and article recommendations.
+Branding update fix: align import styles for default-exported client components.
 
 ## Features
 
-- Keyword research agent
-- Content research agent
-- Article recommendation agent
-- Execution history
+- INTELLIGENCE by Position2 branding
+- AI agent workspace
 
 ## Tech Stack
 
@@ -22,7 +20,6 @@ INTELLIGENCE by Position2 — premium AI agent platform for keyword research, co
 - `/`
 - `/dashboard`
 - `/login`
-- `/settings`
 
 ## Getting Started
 

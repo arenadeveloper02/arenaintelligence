@@ -2,14 +2,14 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
+import ParticleCanvas from '@/components/ParticleCanvas'
 
-export function LoginClient() {
+export default function LoginClient() {
   const router = useRouter()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(false)
+  const [remember, setRemember] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -24,8 +24,8 @@ export function LoginClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, remember }),
       })
-      const data = await res.json()
-      if (!res.ok) {
+      const data = (await res.json()) as { success: boolean; error?: string }
+      if (!res.ok || !data.success) {
         setError(data.error ?? 'Something went wrong')
         setLoading(false)
         return
@@ -33,107 +33,89 @@ export function LoginClient() {
       router.push('/dashboard')
       router.refresh()
     } catch {
-      setError('Network error. Please try again.')
+      setError('Network error')
       setLoading(false)
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-100">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-slate-900/70 p-8 backdrop-blur-xl">
-        <div className="mb-8 text-center">
-          <Link href="/" className="inline-flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-fuchsia-500 text-sm font-bold">
-              IP
-            </div>
-            <span className="text-lg font-semibold">INTELLIGENCE by Position2</span>
-          </Link>
-          <p className="mt-4 text-sm text-slate-400">
-            {mode === 'login'
-              ? 'Sign in to your INTELLIGENCE by Position2 workspace'
-              : 'Create your INTELLIGENCE by Position2 account'}
-          </p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#050510] px-4 text-white">
+      <ParticleCanvas />
+      <div className="relative z-10 w-full max-w-md rounded-2xl border border-white/10 bg-white/[0.03] p-8 backdrop-blur-xl">
+        <div className="mb-8 flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-fuchsia-500 to-cyan-500" />
+          <span className="text-lg font-semibold tracking-tight">INTELLIGENCE by Position2</span>
         </div>
+        <h1 className="text-2xl font-bold">
+          {mode === 'login' ? 'Welcome back' : 'Create your account'}
+        </h1>
+        <p className="mt-2 text-sm text-white/50">
+          {mode === 'login'
+            ? 'Sign in to access your INTELLIGENCE by Position2 workspace.'
+            : 'Get started with INTELLIGENCE by Position2.'}
+        </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm text-slate-300">Email</label>
+            <label className="mb-1.5 block text-sm text-white/70">Email</label>
             <input
               type="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none transition focus:border-fuchsia-500/50"
               placeholder="you@example.com"
             />
           </div>
           <div>
-            <label className="mb-1.5 block text-sm text-slate-300">Password</label>
+            <label className="mb-1.5 block text-sm text-white/70">Password</label>
             <input
               type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm outline-none transition focus:border-fuchsia-500/50"
               placeholder="••••••••"
             />
           </div>
-          {mode === 'login' && (
-            <label className="flex items-center gap-2 text-sm text-slate-400">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-slate-950"
-              />
-              Remember me for 30 days
-            </label>
-          )}
+          <label className="flex items-center gap-2 text-sm text-white/60">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+              className="h-4 w-4 rounded border-white/20 bg-white/5"
+            />
+            Remember me
+          </label>
+
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
               {error}
             </div>
           )}
+
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
+            className="w-full rounded-lg bg-gradient-to-r from-fuchsia-500 to-cyan-500 px-4 py-2.5 text-sm font-semibold shadow-lg shadow-fuchsia-500/25 transition hover:opacity-90 disabled:opacity-50"
           >
             {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-slate-400">
-          {mode === 'login' ? (
-            <>
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('register')
-                  setError(null)
-                }}
-                className="text-indigo-400 hover:underline"
-              >
-                Sign up
-              </button>
-            </>
-          ) : (
-            <>
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={() => {
-                  setMode('login')
-                  setError(null)
-                }}
-                className="text-indigo-400 hover:underline"
-              >
-                Sign in
-              </button>
-            </>
-          )}
+        <div className="mt-6 text-center text-sm text-white/50">
+          {mode === 'login' ? "Don't have an account? " : 'Already have an account? '}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === 'login' ? 'register' : 'login')
+              setError(null)
+            }}
+            className="font-medium text-fuchsia-400 hover:text-fuchsia-300"
+          >
+            {mode === 'login' ? 'Sign up' : 'Sign in'}
+          </button>
         </div>
       </div>
     </div>
