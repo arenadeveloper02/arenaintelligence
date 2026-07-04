@@ -54,6 +54,23 @@ export interface ActionResult {
   error?: string
 }
 
+export type JobStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled'
+
+export interface AgentJobData {
+  id: string
+  agentName: string
+  input: string
+  status: JobStatus
+  progress: number
+  step: string | null
+  error: string | null
+  executionId: string | null
+  retryCount: number
+  createdAt: string
+  startedAt: string | null
+  completedAt: string | null
+}
+
 export type NotificationType = 'success' | 'info' | 'warning' | 'error'
 
 export interface NotificationData {

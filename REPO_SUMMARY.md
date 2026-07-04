@@ -1,22 +1,24 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:17:04.372Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:31:44.566Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — premium AI research platform with keyword, content and article agents, now with a full production-grade notification system (notification center, badge counts, toasts, browser notifications and persistent agent execution alerts).
+AI intelligence platform with background agent job execution — agents now run server-side as persistent jobs that survive page navigation, refreshes, and tab closes, with progress tracking, retry, cancellation, and completion notifications.
 
 **Repository:** `arenaintelligence`  
-**File count:** 61
+**File count:** 67
 
 ## Features
 
-- Responsive UI with Tailwind CSS
-- Next.js App Router pages and components
-- AI agent execution with OpenAI
-- Persistent notification center with unread badge, Today/Yesterday/Earlier grouping, mark-as-read and clear-all
-- Real-time toasts, browser notifications, optional sound and auto-refreshing notification count
-- Agent lifecycle notifications: started, completed, failed, report generated and export completed
+- Background job system for AI agent executions (queued/running/completed/failed/cancelled)
+- Jobs persist in the database and run decoupled from the page lifecycle via server-side processing
+- Automatic retry logic with attempt tracking and error capture
+- Job cancellation and one-click retry for failed jobs
+- Running Jobs panel on the dashboard with live progress bars
+- Header indicator showing count of active background jobs
+- Completion/failure notifications with click-through to reports
+- Agent pages resume live progress display after navigation or refresh
 
 ## Tech Stack
 
@@ -47,6 +49,7 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `Setting`
 - `Execution`
 - `Notification`
+- `AgentJob`
 
 ## File Inventory
 
@@ -71,6 +74,9 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
+- `app/api/jobs/cancel/route.ts`
+- `app/api/jobs/retry/route.ts`
+- `app/api/jobs/route.ts`
 - `app/api/notifications/mark-read/route.ts`
 - `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
@@ -89,6 +95,7 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `components/GradientButton.tsx`
 - `components/HistoryClient.tsx`
 - `components/InsightCard.tsx`
+- `components/JobsIndicator.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
@@ -98,6 +105,7 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `components/PremiumInput.tsx`
 - `components/RecommendationCard.tsx`
 - `components/ReportView.tsx`
+- `components/RunningJobsPanel.tsx`
 - `components/SectionContainer.tsx`
 - `components/SettingsClient.tsx`
 - `components/TimelineComponent.tsx`
@@ -107,6 +115,7 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `lib/actions.ts`
 - `lib/agents.ts`
 - `lib/auth.ts`
+- `lib/jobs.ts`
 - `lib/prisma.ts`
 - `lib/theme.ts`
 - `lib/types.ts`
@@ -142,6 +151,9 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
+- `app/api/jobs/cancel/route.ts`
+- `app/api/jobs/retry/route.ts`
+- `app/api/jobs/route.ts`
 - `app/api/notifications/mark-read/route.ts`
 - `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
@@ -165,6 +177,7 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `components/GradientButton.tsx`
 - `components/HistoryClient.tsx`
 - `components/InsightCard.tsx`
+- `components/JobsIndicator.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
@@ -174,12 +187,14 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 - `components/PremiumInput.tsx`
 - `components/RecommendationCard.tsx`
 - `components/ReportView.tsx`
+- `components/RunningJobsPanel.tsx`
 - `components/SectionContainer.tsx`
 - `components/SettingsClient.tsx`
 - `components/TimelineComponent.tsx`
 - `lib/actions.ts`
 - `lib/agents.ts`
 - `lib/auth.ts`
+- `lib/jobs.ts`
 - `lib/prisma.ts`
 - `lib/theme.ts`
 - `lib/types.ts`
@@ -195,127 +210,132 @@ INTELLIGENCE by Position2 — premium AI research platform with keyword, content
 
 ## Latest Change
 
-- **Updated at:** 2026-07-04T07:17:04.372Z
-- **Request:** Implement a fully functional notification system for Arena Intelligence.
+- **Updated at:** 2026-07-04T07:31:44.566Z
+- **Request:** Fix the AI agent execution lifecycle so that agents continue running in the background even if the user navigates to another page.
 
-Current issue:
-The notification icon is present but does not work.
+Current Behavior:
+- User starts an agent.
+- User navigates to another page (for example, Home).
+- The agent execution stops or gets cancelled.
 
-Requirements:
-
-1. Make the notification icon clickable and functional.
-2. Clicking the notification icon should open a notification panel/dropdown.
-3. The panel should display:
-   - Unread notifications
-   - Read notifications
-   - Notification timestamp
-   - Notification category
-   - Mark as read option
-   - Clear all option
+Expected Behavior:
+- Agent execution must continue in the background regardless of page navigation.
+- The user should be able to leave the page, browse other sections of the application, and return later.
+- Once the agent completes, the user should receive a notification.
 
 ==================================================
-AGENT EXECUTION NOTIFICATIONS
+BACKGROUND EXECUTION REQUIREMENTS
 ==================================================
 
-Whenever a user runs an AI agent, create real-time notifications for the following events:
+Implement a proper asynchronous job system.
 
-- Agent execution started
-- Agent is processing
-- Agent completed successfully
-- Agent failed
-- Export completed
-- Report generated
+When an agent starts:
 
-Examples:
+1. Create a Job ID.
+2. Persist the job in the database.
+3. Mark status as:
+   - Queued
+   - Running
+   - Completed
+   - Failed
+4. Execute the agent independently from the current page lifecycle.
 
-"Keyword Research Agent has started processing."
-
-"Content Research Agent completed successfully."
-
-"Your report is ready to download."
-
-==================================================
-REAL-TIME EXPERIENCE
-==================================================
-
-Implement:
-
-- Real-time notifications
-- Notification badge count
-- Toast notifications
-- Browser notifications (with permission)
-- Sound notification (optional)
-- Auto-refresh notification count
+The execution should not depend on:
+- Component state
+- Browser tab state
+- Current route
+- React component mounting/unmounting
 
 ==================================================
-NOTIFICATION TYPES
+JOB MANAGEMENT
 ==================================================
 
-1. Success
-2. Info
-3. Warning
-4. Error
+Create a background job manager that supports:
 
-Each type should have its own icon and styling.
-
-==================================================
-NOTIFICATION CENTER
-==================================================
-
-The notification dropdown should support:
-
-- Today
-- Yesterday
-- Earlier
-
-Each notification should contain:
-
-- Icon
-- Title
-- Description
-- Time
-- Action button (if applicable)
+- Queueing
+- Retry logic
+- Progress updates
+- Cancellation
+- Error handling
+- Execution history
 
 ==================================================
-AGENT COMPLETION ALERTS
+REAL-TIME STATUS UPDATES
 ==================================================
 
-When an agent completes:
+Users should be able to see:
 
-1. Show a toast notification.
-2. Increment the notification badge.
-3. Add an item to the notification center.
-4. Allow users to click the notification and navigate directly to the generated report/output.
-5. If the user is on another page, still show the notification.
+- Running agents
+- Completed agents
+- Failed agents
+- Estimated progress
+
+Add a "Running Jobs" section in the application where users can monitor all active agent executions.
+
+==================================================
+NOTIFICATIONS
+==================================================
+
+When a background job finishes:
+
+- Show a notification.
+- Increase notification badge count.
+- Store the notification.
+- Allow the user to click the notification and open the generated report.
+
+Example notifications:
+
+"Keyword Research Agent completed successfully."
+
+"Content Research Agent report is ready."
+
+"Article Recommendation Agent failed. Click to retry."
+
+==================================================
+PAGE NAVIGATION BEHAVIOR
+==================================================
+
+Scenario:
+
+1. User starts Keyword Research Agent.
+2. User navigates to Home.
+3. User opens Settings.
+4. User refreshes the page.
+5. User comes back after several minutes.
+
+Expected:
+- The agent should still be running or already completed.
+- The generated report should still be available.
+- Notifications should still be present.
 
 ==================================================
 PERSISTENCE
 ==================================================
 
-Notifications should persist across page refreshes and sessions.
+Persist:
 
-Store:
-
-- Notification ID
-- Type
-- Title
-- Message
-- Status (read/unread)
-- Timestamp
-- Related report ID
-- Related agent ID
+- Job ID
+- Agent ID
+- User ID
+- Input parameters
+- Execution status
+- Progress
+- Start time
+- Completion time
+- Output location
+- Error details
 
 ==================================================
-USER EXPERIENCE
+ARCHITECTURE
 ==================================================
 
-The notification experience should feel similar to:
+Implement a production-grade background processing architecture similar to:
 
-- Slack
-- Notion
-- GitHub
-- ChatGPT Team
+- ChatGPT Tasks
+- Notion AI
+- GitHub Actions
+- Long-running report generation systems
 
-The notification center should look premium, modern, and fully integrated with the AI platform.
+The UI should never block or cancel agent execution simply because the user navigates to another page.
 
-Do not change any existing functionality except implementing a complete production-grade notification system.
+Agent execution must be completely decoupled from the page lifecycle and continue running until completion or failure.

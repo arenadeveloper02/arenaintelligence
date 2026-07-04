@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Zap, KeyRound, Bot, ArrowUpRight, Clock, ArrowRight } from 'lucide-react'
 import { GlassCard } from '@/components/GlassCard'
 import { SectionContainer } from '@/components/SectionContainer'
+import RunningJobsPanel from '@/components/RunningJobsPanel'
 import type { DashboardData, SessionUser } from '@/lib/types'
 
 interface DashboardClientProps {
@@ -100,6 +101,17 @@ export default function DashboardClient({ data, user }: DashboardClientProps) {
           <p className="mt-3 text-3xl font-semibold tracking-tight text-white">{data.lastRuns.length}</p>
           <p className="mt-1 text-xs text-slate-500">Ready to run</p>
         </GlassCard>
+      </div>
+
+      <div>
+        <div className="mb-4">
+          <p className="section-label">Background Jobs</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">Running jobs</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Agent executions run on the server and keep going even if you navigate away or close the tab.
+          </p>
+        </div>
+        <RunningJobsPanel />
       </div>
 
       <div>

@@ -7,6 +7,7 @@ import { LayoutDashboard, KeyRound, FileSearch, Lightbulb, History, Settings, Me
 import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/LogoMark'
 import NotificationCenter from '@/components/NotificationCenter'
+import JobsIndicator from '@/components/JobsIndicator'
 import type { SessionUser } from '@/lib/types'
 
 interface AppShellProps {
@@ -164,6 +165,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <JobsIndicator />
               <NotificationCenter />
               <Link
                 href="/settings"
