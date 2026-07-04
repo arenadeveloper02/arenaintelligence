@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Sparkles, ArrowRight, KeyRound, FileSearch, Lightbulb, Zap, ShieldCheck, BarChart3, Workflow, CheckCircle2, Bot } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { AnimatedBackground } from '@/components/AnimatedBackground'
+import { LogoMark } from '@/components/LogoMark'
 
 interface AgentCard {
   slug: string
@@ -113,9 +114,7 @@ export default function LandingClient() {
         <header className="sticky top-0 z-30 border-b border-white/[0.06] bg-midnight/60 backdrop-blur-xl">
           <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-6 md:px-12">
             <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
-                <span className="text-sm font-bold text-white">I</span>
-              </div>
+              <LogoMark size={36} priority className="h-9 w-9 shrink-0 rounded-xl shadow-lg shadow-primary/40" />
               <span className="text-base font-semibold tracking-tight md:text-lg">
                 INTELLIGENCE <span className="hidden font-normal text-slate-400 sm:inline">by Position2</span>
               </span>
@@ -196,7 +195,7 @@ export default function LandingClient() {
             <div className="relative grid gap-3 rounded-[20px] border border-white/[0.06] bg-[#070B18]/80 p-4 md:grid-cols-[220px_1fr] md:p-5">
               <div className="hidden flex-col gap-1 rounded-2xl border border-white/[0.05] bg-white/[0.02] p-3 md:flex">
                 <div className="mb-2 flex items-center gap-2 px-2">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-secondary text-[10px] font-bold text-white">I</span>
+                  <LogoMark size={24} className="h-6 w-6 shrink-0 rounded-lg" />
                   <span className="text-[11px] font-semibold text-slate-300">INTELLIGENCE</span>
                 </div>
                 {PREVIEW_NAV.map((label, i) => (
@@ -286,32 +285,29 @@ export default function LandingClient() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.12, ease: 'easeOut' }}
-                  whileHover={{ y: -6, boxShadow: '0 20px 50px rgba(99, 102, 241, 0.22)' }}
-                  className="glass-card group relative overflow-hidden p-7"
+                  transition={{ duration: 0.6, delay: i * 0.1 }}
+                  whileHover={{ y: -6 }}
+                  className="glass-card relative overflow-hidden p-7"
                 >
-                  <div className="pointer-events-none absolute -right-12 -top-12 h-40 w-40 rounded-full bg-indigo-500/10 blur-3xl transition-opacity group-hover:opacity-100" />
+                  <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" />
                   <div className={`mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${agent.gradient} shadow-lg`}>
-                    <Icon className="h-5 w-5 text-white" />
-                  </div>
-                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] text-emerald-300">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Active
+                    <Icon className="h-6 w-6 text-white" />
                   </div>
                   <h3 className="text-lg font-semibold text-white">{agent.name}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">{agent.tagline}</p>
-                  <ul className="mt-5 space-y-2.5">
+                  <ul className="mt-5 space-y-2">
                     {agent.points.map((point) => (
                       <li key={point} className="flex items-center gap-2 text-sm text-slate-300">
-                        <CheckCircle2 className="h-4 w-4 shrink-0 text-indigo-400" />
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
                         {point}
                       </li>
                     ))}
                   </ul>
                   <Link
                     href="/login"
-                    className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-400 transition group-hover:text-indigo-300"
+                    className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-indigo-400 transition hover:text-indigo-300"
                   >
-                    Run this agent <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                    Run this agent <ArrowRight className="h-3.5 w-3.5" />
                   </Link>
                 </motion.div>
               )
@@ -323,10 +319,13 @@ export default function LandingClient() {
           <div className="mb-12 text-center">
             <p className="section-label">Platform</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              Built for serious content teams
+              Built for teams that move fast
             </h2>
+            <p className="mx-auto mt-4 max-w-xl text-slate-400">
+              Everything you need to turn raw AI output into consultant-grade deliverables.
+            </p>
           </div>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-6 sm:grid-cols-2">
             {CAPABILITIES.map((cap, i) => {
               const Icon = cap.icon
               return (
@@ -335,14 +334,13 @@ export default function LandingClient() {
                   initial={{ opacity: 0, y: 24 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: i * 0.08, ease: 'easeOut' }}
-                  whileHover={{ y: -4 }}
-                  className="glass-card p-6"
+                  transition={{ duration: 0.6, delay: i * 0.08 }}
+                  className="glass-card p-7"
                 >
-                  <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/20">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/20">
                     <Icon className="h-5 w-5 text-indigo-300" />
                   </span>
-                  <h3 className="text-base font-semibold text-white">{cap.title}</h3>
+                  <h3 className="mt-4 text-lg font-semibold text-white">{cap.title}</h3>
                   <p className="mt-2 text-sm leading-relaxed text-slate-400">{cap.text}</p>
                 </motion.div>
               )
@@ -352,9 +350,9 @@ export default function LandingClient() {
 
         <section id="workflow" className="mx-auto max-w-6xl scroll-mt-24 px-6 pb-24">
           <div className="mb-12 text-center">
-            <p className="section-label">Workflow</p>
+            <p className="section-label">How it works</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
-              From seed keyword to publishing plan
+              From seed keyword to shipped plan
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-3">
@@ -364,40 +362,35 @@ export default function LandingClient() {
                 initial={{ opacity: 0, y: 24 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: i * 0.1, ease: 'easeOut' }}
-                className="glass-card relative overflow-hidden p-7"
+                transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="glass-card p-7"
               >
-                <span className="gradient-text text-4xl font-bold tracking-tight">{step.num}</span>
+                <span className="gradient-text text-3xl font-bold">{step.num}</span>
                 <h3 className="mt-4 text-lg font-semibold text-white">{step.title}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-slate-400">{step.text}</p>
-                {i < STEPS.length - 1 && (
-                  <ArrowRight className="absolute right-6 top-8 hidden h-5 w-5 text-slate-600 md:block" />
-                )}
               </motion.div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto max-w-5xl px-6 pb-28">
+        <section className="mx-auto max-w-6xl px-6 pb-24">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-            className="cta-panel px-8 py-14 text-center md:px-16 md:py-20"
+            transition={{ duration: 0.6 }}
+            className="cta-panel px-8 py-12 text-center md:px-16 md:py-16"
           >
-            <div className="pointer-events-none absolute -left-16 -top-16 h-56 w-56 rounded-full bg-indigo-500/20 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -right-16 h-56 w-56 rounded-full bg-cyan-500/15 blur-3xl" />
-            <h2 className="relative text-3xl font-bold tracking-tight text-white md:text-4xl">
-              Ready to unlock your content intelligence?
+            <p className="section-label">Get started</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-white md:text-4xl">
+              Ready to power your next content decision?
             </h2>
-            <p className="relative mx-auto mt-4 max-w-xl text-slate-300">
-              Create your workspace, connect your OpenAI API key and run your first agent in under
-              two minutes.
+            <p className="mx-auto mt-4 max-w-xl text-slate-400">
+              Create your workspace, connect your OpenAI key and run your first agent in under two minutes.
             </p>
-            <div className="relative mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+            <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
               <Link href="/login" className="btn-gradient px-8 py-3.5">
-                Create your workspace <ArrowRight className="h-4 w-4" />
+                Create free workspace <ArrowRight className="h-4 w-4" />
               </Link>
               <Link href="/login" className="btn-ghost px-8 py-3.5">
                 Sign in
@@ -406,55 +399,21 @@ export default function LandingClient() {
           </motion.div>
         </section>
 
-        <footer className="border-t border-white/[0.06] bg-[#050712]/60 backdrop-blur-xl">
-          <div className="mx-auto max-w-7xl px-6 py-14 md:px-12">
-            <div className="grid gap-10 md:grid-cols-4">
-              <div>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
-                    <span className="text-sm font-bold text-white">I</span>
-                  </div>
-                  <span className="text-sm font-semibold tracking-tight">
-                    INTELLIGENCE <span className="font-normal text-slate-400">by Position2</span>
-                  </span>
-                </div>
-                <p className="mt-4 max-w-xs text-sm leading-relaxed text-slate-500">
-                  A premium AI intelligence platform for keyword research, content analysis and
-                  article planning.
-                </p>
-              </div>
-              <div>
-                <p className="section-label">Agents</p>
-                <ul className="mt-4 space-y-3">
-                  <li><Link href="/agents/keyword-research" className="footer-link">Keyword Research</Link></li>
-                  <li><Link href="/agents/content-research" className="footer-link">Content Research</Link></li>
-                  <li><Link href="/agents/article-recommendation" className="footer-link">Article Recommendation</Link></li>
-                </ul>
-              </div>
-              <div>
-                <p className="section-label">Workspace</p>
-                <ul className="mt-4 space-y-3">
-                  <li><Link href="/dashboard" className="footer-link">Dashboard</Link></li>
-                  <li><Link href="/history" className="footer-link">Execution History</Link></li>
-                  <li><Link href="/settings" className="footer-link">Settings</Link></li>
-                </ul>
-              </div>
-              <div>
-                <p className="section-label">Platform</p>
-                <ul className="mt-4 space-y-3">
-                  <li><a href="#agents" className="footer-link">AI Agents</a></li>
-                  <li><a href="#platform" className="footer-link">Capabilities</a></li>
-                  <li><a href="#workflow" className="footer-link">How it works</a></li>
-                </ul>
-              </div>
+        <footer className="border-t border-white/[0.06]">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-10 md:flex-row md:px-12">
+            <div className="flex items-center gap-3">
+              <LogoMark size={28} className="h-7 w-7 shrink-0 rounded-lg" />
+              <span className="text-sm font-semibold text-slate-300">
+                INTELLIGENCE <span className="font-normal text-slate-500">by Position2</span>
+              </span>
             </div>
-            <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/[0.06] pt-6 text-xs text-slate-600 md:flex-row">
-              <p>© {new Date().getFullYear()} INTELLIGENCE by Position2. All rights reserved.</p>
-              <p className="flex items-center gap-2">
-                <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-                API keys encrypted with AES-256-GCM
-              </p>
+            <div className="flex items-center gap-6">
+              <a href="#agents" className="footer-link">Agents</a>
+              <a href="#platform" className="footer-link">Platform</a>
+              <a href="#workflow" className="footer-link">How it works</a>
+              <Link href="/login" className="footer-link">Sign in</Link>
             </div>
+            <p className="text-xs text-slate-600">© {new Date().getFullYear()} INTELLIGENCE by Position2</p>
           </div>
         </footer>
       </div>

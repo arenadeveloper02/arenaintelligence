@@ -7,6 +7,7 @@ import { motion } from 'framer-motion'
 import { AnimatedBackground } from '@/components/AnimatedBackground'
 import { PremiumInput } from '@/components/PremiumInput'
 import { GradientButton } from '@/components/GradientButton'
+import { LogoMark } from '@/components/LogoMark'
 
 export default function LoginClient() {
   const router = useRouter()
@@ -53,9 +54,7 @@ export default function LoginClient() {
         className="relative z-10 w-full max-w-[480px]"
       >
         <Link href="/" className="mb-8 flex items-center justify-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
-            <span className="text-base font-bold text-white">I</span>
-          </div>
+          <LogoMark size={40} priority className="h-10 w-10 shrink-0 rounded-2xl shadow-lg shadow-primary/40" />
           <span className="text-lg font-semibold tracking-tight">
             INTELLIGENCE <span className="font-normal text-slate-400">by Position2</span>
           </span>

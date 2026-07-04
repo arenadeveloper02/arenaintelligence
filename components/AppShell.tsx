@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, KeyRound, FileSearch, Lightbulb, History, Settings, Bell, Menu, Search, LogOut } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
+import { LogoMark } from '@/components/LogoMark'
 import type { SessionUser } from '@/lib/types'
 
 interface AppShellProps {
@@ -72,9 +73,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
         >
           <div className="flex h-full flex-col border-r border-white/[0.08] bg-[#080C1A]/95 backdrop-blur-xl md:m-4 md:h-[calc(100vh-2rem)] md:rounded-3xl md:border md:bg-[rgba(13,18,36,0.65)] md:shadow-glow">
             <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-white/[0.06] px-6">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
-                <span className="text-sm font-bold text-white">I</span>
-              </div>
+              <LogoMark size={36} priority className="h-9 w-9 shrink-0 rounded-xl shadow-lg shadow-primary/40" />
               <span className="text-sm font-semibold tracking-tight text-white">
                 INTELLIGENCE <span className="font-normal text-slate-400">by Position2</span>
               </span>
@@ -153,6 +152,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
               >
                 <Menu className="h-5 w-5" />
               </button>
+              <LogoMark size={28} className="h-7 w-7 shrink-0 rounded-lg md:hidden" />
               <div className="hidden items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.04] px-4 py-2 transition focus-within:border-indigo-400/40 focus-within:shadow-[0_0_0_3px_rgba(99,102,241,0.15)] md:flex">
                 <Search className="h-4 w-4 text-slate-500" />
                 <input
