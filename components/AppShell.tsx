@@ -65,20 +65,20 @@ export default function AppShell({ children, user, active }: AppShellProps) {
     <div className="relative min-h-screen bg-midnight text-white">
       <div className="mesh-bg pointer-events-none fixed inset-0 z-0" />
       <div className="grid-bg pointer-events-none fixed inset-0 z-0 opacity-60" />
-      <div className="relative z-10 flex">
+      <div className="relative z-10 flex items-start">
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-[280px] transform transition-transform duration-300 ease-out md:static md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 w-[280px] transform transition-transform duration-300 ease-out md:sticky md:top-0 md:bottom-auto md:h-screen md:shrink-0 md:self-start md:translate-x-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          <div className="flex h-full flex-col border-r border-white/[0.08] bg-[#080C1A]/95 backdrop-blur-xl md:m-4 md:h-[calc(100vh-2rem)] md:rounded-3xl md:border md:bg-[rgba(13,18,36,0.65)] md:shadow-glow">
+          <div className="flex h-full flex-col overflow-hidden border-r border-white/[0.08] bg-[#080C1A]/95 backdrop-blur-xl md:m-4 md:h-[calc(100vh-2rem)] md:rounded-3xl md:border md:bg-[rgba(13,18,36,0.65)] md:shadow-glow">
             <div className="flex h-[72px] shrink-0 items-center gap-3 border-b border-white/[0.06] px-6">
               <LogoMark size={36} priority className="h-9 w-9 shrink-0 rounded-xl shadow-lg shadow-primary/40" />
               <span className="text-sm font-semibold tracking-tight text-white">
                 INTELLIGENCE <span className="font-normal text-slate-400">by Position2</span>
               </span>
             </div>
-            <nav className="flex-1 space-y-6 overflow-y-auto p-4">
+            <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto p-4">
               {NAV_SECTIONS.map((section) => (
                 <div key={section.label}>
                   <p className="mb-2 px-4 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">

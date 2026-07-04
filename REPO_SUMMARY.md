@@ -1,21 +1,22 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-04T06:56:46.682Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:06:19.932Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium AI platform for keyword research, content research, and article recommendations with Position2 Intelligence branding.
+INTELLIGENCE by Position2 — a premium AI platform with keyword research, content research and article recommendation agents, featuring a fixed left navigation sidebar with independently scrolling main content.
 
 **Repository:** `arenaintelligence`  
-**File count:** 59
+**File count:** 58
 
 ## Features
 
-- Position2 Intelligence branding with local /public/logo-mark.svg
-- Email/password authentication with httpOnly cookie sessions
-- Encrypted OpenAI API key storage (AES-256-GCM)
+- Sticky left sidebar navigation that stays visible while content scrolls
+- Independently scrollable sidebar when nav content exceeds viewport height
 - Three AI agents: keyword research, content research, article recommendation
-- Execution history with structured report views and exports
+- Secure auth with httpOnly cookie sessions and bcrypt password hashing
+- AES-256-GCM encrypted OpenAI API key storage
+- Execution history with structured report viewing and export
 
 ## Tech Stack
 
@@ -45,6 +46,7 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword research, conten
 - `User`
 - `Setting`
 - `Execution`
+- `AppSetting`
 
 ## File Inventory
 
@@ -123,7 +125,6 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword research, conten
 
 - `README.md`
 - `REPO_SUMMARY.md`
-- `public/logo-mark.svg`
 
 ## Complete File Index
 
@@ -183,50 +184,24 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword research, conten
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
-- `public/logo-mark.svg`
 - `tailwind.config.ts`
 - `tsconfig.json`
 
 ## Latest Change
 
-- **Updated at:** 2026-07-04T06:56:46.682Z
-- **Request:** Update the application branding by replacing the current logo with the Position2 Intelligence logo.
-
-Logo URL:
-https://intelligence.position2.com/static/logo-mark.svg?v=3
+- **Updated at:** 2026-07-04T07:06:19.932Z
+- **Request:** Fix the application layout so that after login, the left navigation menu remains permanently visible and does not scroll away with the page content.
 
 Requirements:
-1. Replace the existing logo everywhere in the application:
-   - Login page
-   - Sidebar
-   - Header/Navbar
-   - Favicon (if applicable)
-   - Loading screens
-   - Empty states
-   - Any marketing or landing pages
+- The left sidebar/navigation should remain sticky or fixed within the viewport at all times.
+- Only the main content area should scroll vertically.
+- If the sidebar content exceeds the screen height, the sidebar itself should become independently scrollable.
+- The behavior should work consistently across desktop, tablet, and mobile devices.
+- The solution should support both expanded and collapsed sidebar states.
+- Ensure there are no layout shifts or visual glitches while scrolling.
+- The header (if present) should continue to behave correctly and not interfere with the sidebar behavior.
+- Remove any parent container configurations that prevent sticky positioning from working.
+- Test the behavior on long pages with large AI reports and dashboards to ensure the navigation remains visible at all times.
 
-2. Download the SVG and store it locally in:
-   /public/logo-mark.svg
-
-3. Do not hotlink the image directly from the external URL in production.
-
-4. Ensure the logo:
-   - Maintains its original aspect ratio.
-   - Looks crisp on retina displays.
-   - Supports both light and dark themes.
-   - Is responsive on mobile, tablet, and desktop.
-
-5. Update metadata:
-   - Open Graph image (if appropriate)
-   - App icons
-   - Manifest icons (if applicable)
-
-6. Replace any references to the old logo or old branding assets.
-
-7. Verify that the logo renders correctly:
-   - Desktop
-   - Mobile
-   - Sidebar collapsed state
-   - High-DPI screens
-
-Do not change any other UI, colors, layout, or functionality. Only update the branding assets and logo references throughout the application.
+Important:
+Do not change the design, colors, spacing, animations, or functionality of the application. Only update the layout behavior so that the left menu remains fixed/sticky while the main content scrolls independently.
