@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser, decryptApiKey } from '@/lib/auth'
-import { AGENTS, buildPrompt } from '@/lib/agents'
+import { AGENTS, buildPrompt, parseAgentReport, SYSTEM_PROMPT } from '@/lib/agents'
 import type { AgentSlug } from '@/lib/types'
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -37,13 +37,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
       body: JSON.stringify({
         model: 'gpt-4o-mini',
-        temperature: 0.7,
+        temperature: 0.5,
+        response_format: { type: 'json_object' },
         messages: [
-          {
-            role: 'system',
-            content:
-              'You are INTELLIGENCE by Position2, an expert SEO and content strategy assistant. Respond with clear, well-structured markdown.',
-          },
+          { role: 'system', content: SYSTEM_PROMPT },
           { role: 'user', content: prompt },
         ],
       }),
@@ -59,6 +56,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     const output = data.choices?.[0]?.message?.content ?? ''
     if (!output) {
       return NextResponse.json({ success: false, error: 'OpenAI returned an empty response.' }, { status: 502 })
+    }
+    const report = parseAgentReport(output)
+    if (!report) {
+      return NextResponse.json(
+        { success: false, error: 'The AI returned an invalid report structure. Please run the agent again.' },
+        { status: 502 }
+      )
     }
     const execution = await prisma.execution.create({
       data: { userId: user.id, agentName: slug, input: JSON.stringify(inputs), output },
