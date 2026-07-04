@@ -45,6 +45,7 @@ export default function LoginClient() {
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-midnight px-4 text-white">
       <AnimatedBackground />
+      <div className="grid-bg pointer-events-none fixed inset-0 z-0" />
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -55,10 +56,13 @@ export default function LoginClient() {
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
             <span className="text-base font-bold text-white">I</span>
           </div>
-          <span className="text-lg font-semibold tracking-tight">INTELLIGENCE by Position2</span>
+          <span className="text-lg font-semibold tracking-tight">
+            INTELLIGENCE <span className="font-normal text-slate-400">by Position2</span>
+          </span>
         </Link>
         <div className="glass-card p-8 md:p-10">
-          <h1 className="gradient-text text-3xl font-semibold tracking-tight">
+          <p className="section-label">{mode === 'login' ? 'Sign in' : 'Sign up'}</p>
+          <h1 className="gradient-text mt-2 text-3xl font-semibold tracking-tight">
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </h1>
           <p className="mt-2 text-sm text-slate-400">
@@ -92,7 +96,7 @@ export default function LoginClient() {
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-white/20 bg-slate-900"
+                className="h-4 w-4 rounded border-white/20 bg-slate-900 accent-indigo-500"
               />
               Remember me
             </label>
