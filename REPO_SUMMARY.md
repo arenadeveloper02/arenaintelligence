@@ -1,21 +1,21 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-03T11:57:11.609Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-04T05:52:53.482Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and article research.
+Premium AI intelligence platform with keyword research, content research, and article recommendation agents, redesigned with a Position2-style glassmorphism dark UI.
 
 **Repository:** `arenaintelligence`  
-**File count:** 42
+**File count:** 48
 
 ## Features
 
-- Keyword research agent
-- Content research agent
-- Article recommendation agent
-- Execution history
-- Secure OpenAI API key storage
+- Email/password authentication with httpOnly JWT sessions
+- Encrypted OpenAI API key storage per user
+- Keyword Research, Content Research, and Article Recommendation AI agents
+- Execution history with search and downloadable reports
+- Premium dark glassmorphism UI with animated particles and gradients
 
 ## Tech Stack
 
@@ -74,12 +74,18 @@ INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and
 ### Components
 
 - `components/AgentRunnerClient.tsx`
+- `components/AnimatedBackground.tsx`
 - `components/AppShell.tsx`
 - `components/DashboardClient.tsx`
+- `components/FloatingPanel.tsx`
+- `components/GlassCard.tsx`
+- `components/GradientButton.tsx`
 - `components/HistoryClient.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/ParticleCanvas.tsx`
+- `components/PremiumInput.tsx`
+- `components/SectionContainer.tsx`
 - `components/SettingsClient.tsx`
 
 ### Libraries
@@ -131,12 +137,18 @@ INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and
 - `app/page.tsx`
 - `app/settings/page.tsx`
 - `components/AgentRunnerClient.tsx`
+- `components/AnimatedBackground.tsx`
 - `components/AppShell.tsx`
 - `components/DashboardClient.tsx`
+- `components/FloatingPanel.tsx`
+- `components/GlassCard.tsx`
+- `components/GradientButton.tsx`
 - `components/HistoryClient.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/ParticleCanvas.tsx`
+- `components/PremiumInput.tsx`
+- `components/SectionContainer.tsx`
 - `components/SettingsClient.tsx`
 - `lib/actions.ts`
 - `lib/agents.ts`
@@ -155,44 +167,408 @@ INTELLIGENCE by Position2 — a premium 3D AI platform for keyword, content, and
 
 ## Latest Change
 
-- **Updated at:** 2026-07-03T11:57:11.609Z
-- **Request:** Update the existing application branding only.
+- **Updated at:** 2026-07-04T05:52:53.482Z
+- **Request:** # UI Redesign Task: Make Arena Intelligence Match Position2 Intelligence Platform
 
-### Required Change
+## Objective
 
-Replace every occurrence of:
+Redesign the entire Arena Intelligence application (`https://arenaintelligence.vercel.app/`) so that it visually and experientially matches the design language of `https://intelligence.position2.com/`.
 
-* **Arena Planner AI**
+This is a **UI/UX transformation only**. Do not modify any existing business logic, APIs, authentication flows, database models, or agent functionality.
 
-with:
+---
 
-* **INTELLIGENCE by Position2**
+# Design Goal
 
-### Scope of Changes
+The application should feel like a premium AI operating system with:
 
-Update the new brand name everywhere it appears, including but not limited to:
+* Futuristic dark theme
+* Glassmorphism cards
+* Soft glowing gradients
+* Modern typography
+* Animated particles and subtle motion
+* Floating UI elements
+* Premium SaaS dashboard aesthetics
+* Enterprise-grade polish
 
-* Landing page hero section
-* Navbar and header
-* Dashboard welcome message
-* Sidebar branding/logo text
-* Authentication pages
-* Browser title (`<title>`)
-* Metadata and SEO tags
-* Footer
-* Settings pages
-* Empty states
-* Notifications and toast messages
-* Loading screens
-* Emails and system messages
-* Documentation references
-* Any hardcoded text, constants, or configuration values
+The final result should be nearly identical to the Position2 Intelligence Platform in terms of:
 
-### Important Constraints
+* Color palette
+* Layout spacing
+* Navigation structure
+* Shadows and glow effects
+* Card styling
+* Button styling
+* Animations
+* Typography hierarchy
+* Overall visual experience
 
-* Do **not** change any functionality, routes, APIs, database schema, styling, layouts, animations, colors, components, or business logic.
-* Do **not** rename variables, file names, database tables, environment variables, or internal identifiers unless they are user-facing text.
-* Keep the existing premium 3D Intelligence Platform design exactly as it is.
-* Preserve all existing features and behavior.
+---
 
-This is a **branding update only**. The only visible change should be replacing the product name **"Arena Planner AI"** with **"INTELLIGENCE by Position2"** throughout the application.
+# Global Theme
+
+## Background
+
+Primary background:
+
+```css
+#050816
+```
+
+Secondary surfaces:
+
+```css
+#0B1120
+#111827
+#151A2D
+```
+
+Card background:
+
+```css
+rgba(15,23,42,0.65)
+```
+
+Borders:
+
+```css
+rgba(255,255,255,0.08)
+```
+
+---
+
+# Accent Colors
+
+Primary:
+
+```css
+#6366F1
+```
+
+Secondary:
+
+```css
+#8B5CF6
+```
+
+Glow:
+
+```css
+#4F46E5
+```
+
+Success:
+
+```css
+#10B981
+```
+
+Danger:
+
+```css
+#EF4444
+```
+
+Warning:
+
+```css
+#F59E0B
+```
+
+---
+
+# Background Effects
+
+Implement:
+
+### Animated Gradient Background
+
+* Deep indigo radial gradients
+* Subtle moving light blobs
+* Slow animated mesh gradient
+
+### Floating Particles
+
+* Small glowing particles
+* Low opacity
+* Parallax movement
+* Interactive on mouse movement
+
+### Glass Overlay
+
+* Soft blurred layer
+* Frosted glass effect
+
+---
+
+# Typography
+
+Font:
+
+```css
+Inter
+```
+
+or
+
+```css
+Plus Jakarta Sans
+```
+
+Hierarchy:
+
+* Page Title: 32px / SemiBold
+* Section Title: 24px / SemiBold
+* Card Title: 18px / Medium
+* Body: 14px
+* Labels: 12px
+
+Text colors:
+
+```css
+#FFFFFF
+#CBD5E1
+#94A3B8
+```
+
+---
+
+# Navigation
+
+## Sidebar
+
+Redesign sidebar to match Position2 Intelligence.
+
+Features:
+
+* Glassmorphism panel
+* Rounded corners
+* Active menu glow
+* Icon + label layout
+* Smooth hover animation
+* Collapse animation
+* Floating appearance
+
+Width:
+
+```css
+280px
+```
+
+---
+
+## Top Header
+
+Implement:
+
+* Sticky header
+* Frosted glass background
+* User avatar
+* Search bar
+* Notification icon
+* Settings icon
+
+Height:
+
+```css
+72px
+```
+
+---
+
+# Cards
+
+All cards should have:
+
+```css
+backdrop-filter: blur(20px);
+border-radius: 24px;
+border: 1px solid rgba(255,255,255,0.08);
+box-shadow:
+0 0 30px rgba(99,102,241,0.12);
+```
+
+Hover:
+
+```css
+transform: translateY(-4px);
+box-shadow:
+0 15px 40px rgba(99,102,241,0.20);
+```
+
+---
+
+# Buttons
+
+Primary Button:
+
+* Gradient background
+* Glow effect
+* Rounded pill shape
+* Smooth transitions
+
+```css
+background:
+linear-gradient(
+135deg,
+#6366F1,
+#8B5CF6
+);
+```
+
+Hover:
+
+```css
+transform: translateY(-2px);
+box-shadow:
+0 0 25px rgba(99,102,241,0.5);
+```
+
+---
+
+# Inputs
+
+Create premium inputs:
+
+* Dark glass background
+* Inner shadows
+* Soft border glow on focus
+* Rounded corners
+
+Focus:
+
+```css
+border-color: #6366F1;
+box-shadow:
+0 0 0 3px rgba(99,102,241,0.2);
+```
+
+---
+
+# Dashboard Layout
+
+Use:
+
+* 24px spacing
+* Large rounded containers
+* Floating cards
+* Maximum content width
+* Responsive grid
+
+---
+
+# Animations
+
+Use Framer Motion.
+
+Implement:
+
+### Page Entrance
+
+* Fade in
+* Slide up
+* Stagger animations
+
+### Card Animation
+
+* Hover lift
+* Glow expansion
+
+### Sidebar
+
+* Smooth expand/collapse
+
+### Loading
+
+* Skeleton shimmer
+* Animated gradients
+
+---
+
+# Agent Cards
+
+Redesign all AI agent cards to match Position2 Intelligence.
+
+Each card should contain:
+
+* Gradient icon
+* Agent name
+* Description
+* Status indicator
+* Hover glow
+* Premium shadows
+
+---
+
+# Tables
+
+Implement:
+
+* Glass table containers
+* Sticky headers
+* Hover row highlights
+* Rounded corners
+* Soft dividers
+
+---
+
+# Login Page
+
+Completely redesign login page.
+
+Features:
+
+* Fullscreen animated background
+* Floating particles
+* Glass login card
+* Gradient heading
+* Smooth input animations
+* Premium CTA button
+
+Card width:
+
+```css
+480px
+```
+
+---
+
+# Responsive Design
+
+Support:
+
+* Desktop
+* Laptop
+* Tablet
+* Mobile
+
+Sidebar should become:
+
+* Drawer on mobile
+* Overlay menu
+
+---
+
+# Technical Requirements
+
+* Preserve all existing functionality.
+* Do not change APIs.
+* Do not change routes.
+* Do not change authentication.
+* Do not remove existing components.
+* Refactor only the UI layer and styling.
+* Create reusable design tokens and theme configuration.
+* Build reusable components:
+
+  * GlassCard
+  * GradientButton
+  * FloatingPanel
+  * AnimatedBackground
+  * PremiumInput
+  * SectionContainer
+
+---
+
+# Final Goal
+
+After implementation, `https://arenaintelligence.vercel.app/` should feel visually indistinguishable from `https://intelligence.position2.com/`, with the same premium dark AI-platform experience, animations, spacing, and design language while preserving all existing application functionality.

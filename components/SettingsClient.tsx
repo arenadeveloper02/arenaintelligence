@@ -2,6 +2,11 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { User, KeyRound, ShieldCheck } from 'lucide-react'
+import { GlassCard } from '@/components/GlassCard'
+import { PremiumInput } from '@/components/PremiumInput'
+import { GradientButton } from '@/components/GradientButton'
 import type { ApiKeyStatus, SessionUser } from '@/lib/types'
 
 interface SettingsClientProps {
@@ -27,7 +32,7 @@ export function SettingsClient({ user, status }: SettingsClientProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey }),
       })
-      const data = await res.json()
+      const data = (await res.json()) as { error?: string }
       if (!res.ok) {
         setError(data.error ?? 'Failed to save API key')
         setSaving(false)
@@ -44,34 +49,41 @@ export function SettingsClient({ user, status }: SettingsClientProps) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold lg:text-3xl">Settings</h1>
-        <p className="mt-2 text-sm text-slate-400">
+    <div className="mx-auto max-w-2xl space-y-6">
+      <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+        <h1 className="text-3xl font-semibold tracking-tight text-white">Settings</h1>
+        <p className="mt-1 text-sm text-slate-400">
           Manage your INTELLIGENCE by Position2 account and integrations.
         </p>
-      </div>
+      </motion.div>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="text-lg font-semibold">Account</h2>
-        <div className="mt-4 flex items-center justify-between rounded-lg border border-white/10 bg-slate-950/40 px-4 py-3">
-          <span className="text-sm text-slate-400">Email</span>
-          <span className="text-sm">{user.email}</span>
+      <GlassCard hover={false} delay={0.08} className="p-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/30 to-secondary/20">
+            <User className="h-5 w-5 text-indigo-300" />
+          </span>
+          <h2 className="text-lg font-medium text-white">Account</h2>
         </div>
-      </div>
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-white/[0.08] bg-black/20 px-4 py-3">
+          <span className="text-sm text-slate-400">Email</span>
+          <span className="text-sm text-white">{user.email}</span>
+        </div>
+      </GlassCard>
 
-      <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-        <h2 className="text-lg font-semibold">OpenAI API Key</h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Your API key is encrypted and stored securely. It powers all INTELLIGENCE by Position2
-          agents.
+      <GlassCard hover={false} delay={0.16} className="p-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/20">
+            <KeyRound className="h-5 w-5 text-emerald-300" />
+          </span>
+          <h2 className="text-lg font-medium text-white">OpenAI API Key</h2>
+        </div>
+        <p className="mt-3 text-sm text-slate-400">
+          Your API key is encrypted and stored securely. It powers all INTELLIGENCE by Position2 agents.
         </p>
 
         {status.configured && (
-          <div className="mt-4 flex items-center justify-between rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
-            <span className="text-sm text-emerald-200">
-              Current key: {status.maskedKey}
-            </span>
+          <div className="mt-4 flex items-center justify-between rounded-2xl border border-success/30 bg-success/10 px-4 py-3">
+            <span className="text-sm text-emerald-200">Current key: {status.maskedKey}</span>
             {status.updatedAt && (
               <span className="text-xs text-emerald-300/70">
                 Updated {new Date(status.updatedAt).toLocaleDateString()}
@@ -80,34 +92,36 @@ export function SettingsClient({ user, status }: SettingsClientProps) {
           </div>
         )}
 
-        <form onSubmit={handleSave} className="mt-4 space-y-4">
-          <input
+        <form onSubmit={handleSave} className="mt-5 space-y-4">
+          <PremiumInput
+            id="apiKey"
+            label="API Key"
             type="password"
             value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
+            onChange={setApiKey}
             required
             placeholder="sk-..."
-            className="w-full rounded-lg border border-white/10 bg-slate-950/50 px-3 py-2.5 text-sm outline-none focus:border-indigo-500"
           />
           {message && (
-            <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
+            <div className="rounded-2xl border border-success/30 bg-success/10 px-4 py-2.5 text-sm text-emerald-300">
               {message}
             </div>
           )}
           {error && (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+            <div className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-red-300">
               {error}
             </div>
           )}
-          <button
-            type="submit"
-            disabled={saving}
-            className="rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-6 py-2.5 text-sm font-semibold transition hover:opacity-90 disabled:opacity-50"
-          >
+          <GradientButton type="submit" disabled={saving}>
             {saving ? 'Saving…' : status.configured ? 'Update key' : 'Save key'}
-          </button>
+          </GradientButton>
         </form>
-      </div>
+
+        <p className="mt-5 flex items-center gap-2 text-xs text-slate-500">
+          <ShieldCheck className="h-4 w-4 text-success" />
+          Your key is encrypted with AES-256-GCM before it is stored.
+        </p>
+      </GlassCard>
     </div>
   )
 }

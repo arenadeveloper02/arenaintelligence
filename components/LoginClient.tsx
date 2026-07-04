@@ -3,7 +3,10 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import ParticleCanvas from '@/components/ParticleCanvas'
+import { motion } from 'framer-motion'
+import { AnimatedBackground } from '@/components/AnimatedBackground'
+import { PremiumInput } from '@/components/PremiumInput'
+import { GradientButton } from '@/components/GradientButton'
 
 export default function LoginClient() {
   const router = useRouter()
@@ -40,15 +43,22 @@ export default function LoginClient() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-slate-950 px-4 text-white">
-      <ParticleCanvas />
-      <div className="relative z-10 w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-midnight px-4 text-white">
+      <AnimatedBackground />
+      <motion.div
+        initial={{ opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: 'easeOut' }}
+        className="relative z-10 w-full max-w-[480px]"
+      >
         <Link href="/" className="mb-8 flex items-center justify-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-fuchsia-600 shadow-lg shadow-indigo-500/30" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-secondary shadow-lg shadow-primary/40">
+            <span className="text-base font-bold text-white">I</span>
+          </div>
           <span className="text-lg font-semibold tracking-tight">INTELLIGENCE by Position2</span>
         </Link>
-        <div className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur">
-          <h1 className="text-2xl font-bold">
+        <div className="glass-card p-8 md:p-10">
+          <h1 className="gradient-text text-3xl font-semibold tracking-tight">
             {mode === 'login' ? 'Welcome back' : 'Create your account'}
           </h1>
           <p className="mt-2 text-sm text-slate-400">
@@ -57,30 +67,26 @@ export default function LoginClient() {
               : 'Sign up to start using INTELLIGENCE by Position2.'}
           </p>
 
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-slate-900/50 px-4 py-2.5 text-sm text-white outline-none transition focus:border-indigo-500"
-                placeholder="you@example.com"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-300">Password</label>
-              <input
-                type="password"
-                required
-                minLength={6}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-lg border border-white/10 bg-slate-900/50 px-4 py-2.5 text-sm text-white outline-none transition focus:border-indigo-500"
-                placeholder="••••••••"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <PremiumInput
+              id="email"
+              label="Email"
+              type="email"
+              value={email}
+              onChange={setEmail}
+              placeholder="you@example.com"
+              required
+            />
+            <PremiumInput
+              id="password"
+              label="Password"
+              type="password"
+              value={password}
+              onChange={setPassword}
+              placeholder="••••••••"
+              required
+              minLength={6}
+            />
             <label className="flex items-center gap-2 text-sm text-slate-400">
               <input
                 type="checkbox"
@@ -92,18 +98,14 @@ export default function LoginClient() {
             </label>
 
             {error && (
-              <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-2.5 text-sm text-red-300">
+              <div className="rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-red-300">
                 {error}
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full rounded-lg bg-gradient-to-r from-indigo-500 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold shadow-lg shadow-indigo-500/30 transition hover:opacity-90 disabled:opacity-50"
-            >
+            <GradientButton type="submit" disabled={loading} className="w-full py-3">
               {loading ? 'Please wait…' : mode === 'login' ? 'Sign in' : 'Create account'}
-            </button>
+            </GradientButton>
           </form>
 
           <div className="mt-6 text-center text-sm text-slate-400">
@@ -116,7 +118,7 @@ export default function LoginClient() {
                     setMode('register')
                     setError('')
                   }}
-                  className="font-medium text-indigo-400 hover:text-indigo-300"
+                  className="font-medium text-indigo-400 transition hover:text-indigo-300"
                 >
                   Sign up
                 </button>
@@ -130,7 +132,7 @@ export default function LoginClient() {
                     setMode('login')
                     setError('')
                   }}
-                  className="font-medium text-indigo-400 hover:text-indigo-300"
+                  className="font-medium text-indigo-400 transition hover:text-indigo-300"
                 >
                   Sign in
                 </button>
@@ -141,7 +143,7 @@ export default function LoginClient() {
         <p className="mt-6 text-center text-xs text-slate-600">
           © {new Date().getFullYear()} INTELLIGENCE by Position2
         </p>
-      </div>
+      </motion.div>
     </div>
   )
 }
