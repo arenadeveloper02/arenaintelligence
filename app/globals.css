@@ -24,6 +24,7 @@ body {
   color: #cbd5e1;
   -webkit-font-smoothing: antialiased;
   font-feature-settings: 'ss01' on, 'cv01' on;
+  letter-spacing: -0.01em;
 }
 
 .mesh-bg {
@@ -54,7 +55,7 @@ body {
 }
 
 .glass-card-hover {
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-card-hover:hover {
@@ -90,6 +91,7 @@ body {
   padding: 6px 16px;
   font-size: 13px;
   color: #cbd5e1;
+  box-shadow: 0 0 20px rgba(99, 102, 241, 0.1);
 }
 
 .section-label {
@@ -98,6 +100,27 @@ body {
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: #818cf8;
+}
+
+.nav-link {
+  font-size: 14px;
+  font-weight: 500;
+  color: #94a3b8;
+  transition: color 0.2s ease;
+}
+
+.nav-link:hover {
+  color: #ffffff;
+}
+
+.footer-link {
+  font-size: 13px;
+  color: #64748b;
+  transition: color 0.2s ease;
+}
+
+.footer-link:hover {
+  color: #e2e8f0;
 }
 
 .input-field {
@@ -139,7 +162,7 @@ body {
   font-weight: 600;
   color: #ffffff;
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 .btn-gradient:hover {
@@ -168,7 +191,7 @@ body {
   font-size: 14px;
   font-weight: 500;
   color: #e2e8f0;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .btn-ghost:hover {
@@ -186,6 +209,17 @@ body {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   box-shadow: 0 20px 60px rgba(99, 102, 241, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.preview-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(129, 140, 248, 0.22);
+  background: linear-gradient(180deg, rgba(15, 21, 40, 0.85), rgba(8, 12, 26, 0.9));
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  box-shadow: 0 30px 80px rgba(99, 102, 241, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .orb {

@@ -21,8 +21,11 @@ export const theme = {
     sidebarWidth: '280px',
     headerHeight: '72px',
     sectionY: '96px',
+    sectionYLg: '112px',
     cardPadding: '24px',
+    cardPaddingLg: '28px',
     pagePadding: '32px',
+    navPaddingX: '48px',
   },
   radius: {
     sm: '10px',
@@ -35,6 +38,7 @@ export const theme = {
   shadows: {
     glow: '0 0 30px rgba(99, 102, 241, 0.12)',
     glowLg: '0 20px 50px rgba(99, 102, 241, 0.22)',
+    glowXl: '0 30px 80px rgba(99, 102, 241, 0.28)',
     glowBtn: '0 0 25px rgba(99, 102, 241, 0.5)',
     glowCyan: '0 0 30px rgba(34, 211, 238, 0.18)',
     innerCard: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
@@ -45,6 +49,7 @@ export const theme = {
     cardIndigo: 'linear-gradient(135deg, #6366F1, #22D3EE)',
     cardCyan: 'linear-gradient(135deg, #06B6D4, #3B82F6)',
     cardPurple: 'linear-gradient(135deg, #A855F7, #EC4899)',
+    ctaPanel: 'linear-gradient(135deg, rgba(79, 70, 229, 0.22), rgba(139, 92, 246, 0.14), rgba(6, 182, 212, 0.12))',
     mesh: 'radial-gradient(600px circle at 15% 15%, rgba(79, 70, 229, 0.18), transparent 60%), radial-gradient(720px circle at 85% 25%, rgba(139, 92, 246, 0.14), transparent 60%), radial-gradient(640px circle at 50% 95%, rgba(6, 182, 212, 0.10), transparent 60%)',
   },
   animations: {
@@ -52,17 +57,25 @@ export const theme = {
     floatSlow: 'float 12s ease-in-out infinite',
     pulseSlow: 'pulse 4s ease-in-out infinite',
     hoverLift: { y: -6, boxShadow: '0 20px 50px rgba(99, 102, 241, 0.22)' },
+    cardLift: { y: -4, boxShadow: '0 15px 40px rgba(99, 102, 241, 0.20)' },
     duration: { fast: 0.2, base: 0.5, slow: 0.8 },
     easing: 'easeOut',
   },
   typography: {
     fontFamily: 'Inter, system-ui, sans-serif',
-    display: { size: '3.75rem', weight: 700, tracking: '-0.02em', leading: 1.1 },
+    display: { size: '4.5rem', weight: 700, tracking: '-0.025em', leading: 1.08 },
     h1: { size: '2.25rem', weight: 600, tracking: '-0.02em' },
-    h2: { size: '1.5rem', weight: 600, tracking: '-0.01em' },
-    body: { size: '0.9375rem', weight: 400 },
+    h2: { size: '1.875rem', weight: 600, tracking: '-0.015em' },
+    h3: { size: '1.25rem', weight: 600, tracking: '-0.01em' },
+    body: { size: '0.9375rem', weight: 400, leading: 1.65 },
     small: { size: '0.8125rem', weight: 400 },
-    label: { size: '0.6875rem', weight: 600, tracking: '0.1em' },
+    label: { size: '0.6875rem', weight: 600, tracking: '0.14em' },
+  },
+  breakpoints: {
+    sm: '640px',
+    md: '768px',
+    lg: '1024px',
+    xl: '1280px',
   },
 } as const
 

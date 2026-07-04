@@ -63,9 +63,10 @@ export default function AppShell({ children, user, active }: AppShellProps) {
   return (
     <div className="relative min-h-screen bg-midnight text-white">
       <div className="mesh-bg pointer-events-none fixed inset-0 z-0" />
+      <div className="grid-bg pointer-events-none fixed inset-0 z-0 opacity-60" />
       <div className="relative z-10 flex">
         <aside
-          className={`fixed inset-y-0 left-0 z-40 w-[280px] transform transition-transform duration-300 md:static md:translate-x-0 ${
+          className={`fixed inset-y-0 left-0 z-40 w-[280px] transform transition-transform duration-300 ease-out md:static md:translate-x-0 ${
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
@@ -96,7 +97,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
                           className={`group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition-all duration-200 ${
                             isActive
                               ? 'bg-gradient-to-r from-primary/25 to-secondary/20 text-white shadow-[0_0_20px_rgba(99,102,241,0.25)] ring-1 ring-inset ring-indigo-400/20'
-                              : 'text-slate-400 hover:bg-white/[0.05] hover:text-white'
+                              : 'text-slate-400 hover:translate-x-0.5 hover:bg-white/[0.05] hover:text-white'
                           }`}
                         >
                           <Icon
@@ -104,7 +105,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
                             className={isActive ? 'text-indigo-300' : 'transition group-hover:text-indigo-300'}
                           />
                           {item.label}
-                          {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400" />}
+                          {isActive && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-indigo-400 shadow-[0_0_8px_rgba(129,140,248,0.9)]" />}
                         </Link>
                       )
                     })}
@@ -113,7 +114,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
               ))}
             </nav>
             <div className="shrink-0 border-t border-white/[0.06] p-4">
-              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3">
+              <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-3 transition hover:border-indigo-400/20">
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary to-secondary text-sm font-semibold text-white shadow-lg shadow-primary/30">
                   {initial}
                 </div>

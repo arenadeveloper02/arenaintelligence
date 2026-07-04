@@ -22,9 +22,13 @@ const config: Config = {
       borderRadius: {
         '4xl': '2rem',
       },
+      letterSpacing: {
+        'tight-display': '-0.025em',
+      },
       boxShadow: {
         glow: '0 0 30px rgba(99, 102, 241, 0.12)',
         'glow-lg': '0 20px 50px rgba(99, 102, 241, 0.22)',
+        'glow-xl': '0 30px 80px rgba(99, 102, 241, 0.28)',
         'glow-btn': '0 0 25px rgba(99, 102, 241, 0.5)',
         'glow-cyan': '0 0 30px rgba(34, 211, 238, 0.18)',
         'inner-card': 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
@@ -43,6 +47,9 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateY(16px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+      },
+      transitionTimingFunction: {
+        premium: 'cubic-bezier(0.22, 1, 0.36, 1)',
       },
     },
   },

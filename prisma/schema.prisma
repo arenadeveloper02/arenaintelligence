@@ -8,12 +8,11 @@ generator client {
 }
 
 model User {
-  id        String      @id @default(cuid())
-  email     String      @unique
-  password  String
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  setting   Setting?
+  id         String      @id @default(cuid())
+  email      String      @unique
+  password   String
+  createdAt  DateTime    @default(now())
+  setting    Setting?
   executions Execution[]
 }
 
@@ -35,6 +34,6 @@ model Execution {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, agentName])
   @@index([userId, createdAt])
+  @@index([userId, agentName])
 }
