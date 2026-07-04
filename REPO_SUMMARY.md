@@ -1,24 +1,21 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:31:44.566Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:37:04.997Z.
 
 ## Overview
 
-AI intelligence platform with background agent job execution — agents now run server-side as persistent jobs that survive page navigation, refreshes, and tab closes, with progress tracking, retry, cancellation, and completion notifications.
+AI intelligence platform with background agent execution — jobs persist in the database, survive navigation and refresh, auto-recover if interrupted, and notify the user on completion.
 
 **Repository:** `arenaintelligence`  
 **File count:** 67
 
 ## Features
 
-- Background job system for AI agent executions (queued/running/completed/failed/cancelled)
-- Jobs persist in the database and run decoupled from the page lifecycle via server-side processing
-- Automatic retry logic with attempt tracking and error capture
-- Job cancellation and one-click retry for failed jobs
-- Running Jobs panel on the dashboard with live progress bars
-- Header indicator showing count of active background jobs
-- Completion/failure notifications with click-through to reports
-- Agent pages resume live progress display after navigation or refresh
+- Durable background job system persisted in Postgres (queued → running → completed/failed/cancelled)
+- Automatic stale-job recovery: interrupted executions are re-queued and resumed on the next poll
+- Job execution fully decoupled from page lifecycle using Next.js after() with extended maxDuration
+- Retry, cancel, progress tracking and execution history for every agent run
+- Notifications with badge counts when background jobs finish or fail
 
 ## Tech Stack
 
@@ -210,7 +207,7 @@ AI intelligence platform with background agent job execution — agents now run 
 
 ## Latest Change
 
-- **Updated at:** 2026-07-04T07:31:44.566Z
+- **Updated at:** 2026-07-04T07:37:04.997Z
 - **Request:** Fix the AI agent execution lifecycle so that agents continue running in the background even if the user navigates to another page.
 
 Current Behavior:

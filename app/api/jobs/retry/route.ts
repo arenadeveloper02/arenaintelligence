@@ -4,6 +4,8 @@ import { getCurrentUser } from '@/lib/auth'
 import { processJob, toAgentJobData } from '@/lib/jobs'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+export const maxDuration = 60
 
 export async function POST(request: Request): Promise<NextResponse> {
   const user = await getCurrentUser()
@@ -39,7 +41,9 @@ export async function POST(request: Request): Promise<NextResponse> {
         executionId: null,
       },
     })
-    after(() => processJob(updated.id))
+    after(async () => {
+      await processJob(updated.id)
+    })
     return NextResponse.json({ success: true, job: toAgentJobData(updated) })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to retry the job.' }, { status: 500 })

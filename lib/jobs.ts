@@ -6,6 +6,15 @@ import type { AgentJobData, AgentSlug, JobStatus } from '@/lib/types'
 const MAX_ATTEMPTS = 3
 const RETRY_DELAY_MS = 2000
 
+// A queued job that has not been picked up within this window is considered
+// stale (the serverless invocation that scheduled it was terminated) and is
+// re-dispatched on the next poll of GET /api/jobs.
+const QUEUED_STALE_MS = 20_000
+
+// A running job whose row has not been touched (no progress heartbeat) within
+// this window is considered orphaned and is re-queued for recovery.
+const RUNNING_STALE_MS = 120_000
+
 interface AgentJobRow {
   id: string
   agentName: string
@@ -42,6 +51,44 @@ export function toAgentJobData(j: AgentJobRow): AgentJobData {
   }
 }
 
+/**
+ * Recover jobs whose executor was interrupted (e.g. serverless invocation
+ * terminated, deployment restarted). Stale queued jobs are re-dispatched and
+ * orphaned running jobs are re-queued. Returns the ids that should be handed
+ * back to processJob(). This makes execution independent of any single
+ * request, browser tab or page lifecycle.
+ */
+export async function recoverStaleJobs(userId: string): Promise<string[]> {
+  const toProcess: string[] = []
+  try {
+    const now = Date.now()
+    const active = await prisma.agentJob.findMany({
+      where: { userId, status: { in: ['queued', 'running'] } },
+      select: { id: true, status: true, createdAt: true, updatedAt: true },
+    })
+    for (const job of active) {
+      const idleMs = now - job.updatedAt.getTime()
+      if (job.status === 'queued' && idleMs > QUEUED_STALE_MS) {
+        // Touch the row so concurrent polls do not double-dispatch, then re-kick.
+        await prisma.agentJob.update({
+          where: { id: job.id },
+          data: { step: 'Queued', progress: 0 },
+        })
+        toProcess.push(job.id)
+      } else if (job.status === 'running' && idleMs > RUNNING_STALE_MS) {
+        await prisma.agentJob.update({
+          where: { id: job.id },
+          data: { status: 'queued', step: 'Recovering interrupted job', progress: 0, error: null },
+        })
+        toProcess.push(job.id)
+      }
+    }
+  } catch {
+    // recovery is best-effort and must never break polling
+  }
+  return toProcess
+}
+
 async function createJobNotification(
   userId: string,
   type: 'success' | 'info' | 'warning' | 'error',
@@ -73,6 +120,7 @@ async function jobCancelled(jobId: string): Promise<boolean> {
 }
 
 async function setProgress(jobId: string, progress: number, step: string): Promise<void> {
+  // updateMany also refreshes updatedAt, acting as a liveness heartbeat for recovery.
   await prisma.agentJob.updateMany({
     where: { id: jobId, status: 'running' },
     data: { progress, step },

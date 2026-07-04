@@ -2,10 +2,14 @@ import { NextResponse, after } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
 import { AGENTS } from '@/lib/agents'
-import { processJob, toAgentJobData } from '@/lib/jobs'
+import { processJob, recoverStaleJobs, toAgentJobData } from '@/lib/jobs'
 import type { AgentSlug } from '@/lib/types'
 
 export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+// Keep the serverless invocation alive long enough for the after() background
+// executor to finish long-running agent calls, independent of the browser.
+export const maxDuration = 60
 
 export async function GET(request: Request): Promise<NextResponse> {
   const user = await getCurrentUser()
@@ -13,6 +17,18 @@ export async function GET(request: Request): Promise<NextResponse> {
     return NextResponse.json({ jobs: [], runningCount: 0 }, { status: 401 })
   }
   try {
+    // Self-healing: if a previous invocation was terminated mid-run, stale
+    // queued/running jobs are re-dispatched here so work always completes
+    // regardless of navigation, refresh or closed tabs.
+    const staleIds = await recoverStaleJobs(user.id)
+    if (staleIds.length > 0) {
+      after(async () => {
+        for (const jobId of staleIds) {
+          await processJob(jobId)
+        }
+      })
+    }
+
     const url = new URL(request.url)
     const id = url.searchParams.get('id')
     if (id) {
@@ -68,6 +84,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       )
     }
+    // 1) Persist the job first — the job row (not React state) is the source
+    // of truth for the entire execution lifecycle.
     const job = await prisma.agentJob.create({
       data: {
         userId: user.id,
@@ -92,7 +110,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     } catch {
       // start notification is best-effort
     }
-    after(() => processJob(job.id))
+    // 2) Execute server-side AFTER the response is sent. This is fully
+    // decoupled from the client: closing the tab, navigating or refreshing
+    // has no effect on the running job.
+    after(async () => {
+      await processJob(job.id)
+    })
     return NextResponse.json({ success: true, job: toAgentJobData(job) })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to start the agent job.' }, { status: 500 })
