@@ -35,6 +35,12 @@ function formatDate(value: string): string {
   })
 }
 
+function refreshNotifications(): void {
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('notifications:refresh'))
+  }
+}
+
 export default function AgentRunnerClient({ agent, hasApiKey, executions }: AgentRunnerClientProps) {
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {}
@@ -66,6 +72,9 @@ export default function AgentRunnerClient({ agent, hasApiKey, executions }: Agen
     const timer = window.setInterval(() => {
       setCurrentStep((s) => Math.min(s + 1, PIPELINE_STEPS.length - 1))
     }, 1600)
+    window.setTimeout(() => {
+      refreshNotifications()
+    }, 1500)
     try {
       const res = await fetch('/api/agents/run', {
         method: 'POST',
@@ -98,6 +107,7 @@ export default function AgentRunnerClient({ agent, hasApiKey, executions }: Agen
       window.clearInterval(timer)
       setCurrentStep(PIPELINE_STEPS.length)
       setRunning(false)
+      refreshNotifications()
     }
   }
 

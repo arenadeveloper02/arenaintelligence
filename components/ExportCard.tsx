@@ -20,6 +20,25 @@ function downloadFile(content: string, filename: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
+async function notifyExport(format: string, slug: string): Promise<void> {
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'success',
+        category: 'Export',
+        title: 'Export completed',
+        message: `Your ${format} export is ready and has been downloaded.`,
+        agentSlug: slug,
+      }),
+    })
+    window.dispatchEvent(new Event('notifications:refresh'))
+  } catch {
+    // export notifications are best-effort
+  }
+}
+
 function csvEscape(v: string): string {
   return `"${v.replace(/"/g, '""')}"`
 }
@@ -88,21 +107,30 @@ export function ExportCard({ report, slug }: ExportCardProps) {
       <div className="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
-          onClick={() => downloadFile(toCsv(report), `${slug}-data.csv`, 'text/csv;charset=utf-8')}
+          onClick={() => {
+            downloadFile(toCsv(report), `${slug}-data.csv`, 'text/csv;charset=utf-8')
+            void notifyExport('CSV', slug)
+          }}
           className="btn-ghost px-4 py-2 text-xs"
         >
           <FileSpreadsheet className="h-3.5 w-3.5" /> CSV / Excel
         </button>
         <button
           type="button"
-          onClick={() => downloadFile(toMarkdown(report), `${slug}-report.md`, 'text/markdown;charset=utf-8')}
+          onClick={() => {
+            downloadFile(toMarkdown(report), `${slug}-report.md`, 'text/markdown;charset=utf-8')
+            void notifyExport('Markdown', slug)
+          }}
           className="btn-ghost px-4 py-2 text-xs"
         >
           <FileText className="h-3.5 w-3.5" /> Markdown Report
         </button>
         <button
           type="button"
-          onClick={() => downloadFile(JSON.stringify(report, null, 2), `${slug}-report.json`, 'application/json;charset=utf-8')}
+          onClick={() => {
+            downloadFile(JSON.stringify(report, null, 2), `${slug}-report.json`, 'application/json;charset=utf-8')
+            void notifyExport('JSON', slug)
+          }}
           className="btn-ghost px-4 py-2 text-xs"
         >
           <FileJson className="h-3.5 w-3.5" /> JSON Data

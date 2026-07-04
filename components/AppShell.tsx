@@ -3,9 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { LayoutDashboard, KeyRound, FileSearch, Lightbulb, History, Settings, Bell, Menu, Search, LogOut } from 'lucide-react'
+import { LayoutDashboard, KeyRound, FileSearch, Lightbulb, History, Settings, Menu, Search, LogOut } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 import { LogoMark } from '@/components/LogoMark'
+import NotificationCenter from '@/components/NotificationCenter'
 import type { SessionUser } from '@/lib/types'
 
 interface AppShellProps {
@@ -163,14 +164,7 @@ export default function AppShell({ children, user, active }: AppShellProps) {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="relative rounded-xl p-2 text-slate-400 transition hover:bg-white/[0.06] hover:text-white"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(99,102,241,0.8)]" />
-              </button>
+              <NotificationCenter />
               <Link
                 href="/settings"
                 aria-label="Settings"

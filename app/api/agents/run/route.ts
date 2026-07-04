@@ -4,6 +4,32 @@ import { getCurrentUser, decryptApiKey } from '@/lib/auth'
 import { AGENTS, buildPrompt, parseAgentReport, SYSTEM_PROMPT } from '@/lib/agents'
 import type { AgentSlug } from '@/lib/types'
 
+async function createNotification(
+  userId: string,
+  type: 'success' | 'info' | 'warning' | 'error',
+  category: string,
+  title: string,
+  message: string,
+  agentSlug?: string,
+  executionId?: string
+): Promise<void> {
+  try {
+    await prisma.notification.create({
+      data: {
+        userId,
+        type,
+        category,
+        title,
+        message,
+        agentSlug: agentSlug ?? null,
+        executionId: executionId ?? null,
+      },
+    })
+  } catch {
+    // Notification failures must never break agent execution
+  }
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   const user = await getCurrentUser()
   if (!user) {
@@ -31,6 +57,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         { status: 400 }
       )
     }
+    await createNotification(
+      user.id,
+      'info',
+      'Agent Execution',
+      `${config.name} started`,
+      `${config.name} has started processing your request.`,
+      slug
+    )
     const prompt = buildPrompt(slug, inputs)
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -50,15 +84,39 @@ export async function POST(request: Request): Promise<NextResponse> {
         response.status === 401
           ? 'Your OpenAI API key was rejected. Update it in Settings.'
           : `OpenAI request failed (status ${response.status}). Please try again.`
+      await createNotification(
+        user.id,
+        'error',
+        'Agent Execution',
+        `${config.name} failed`,
+        message,
+        slug
+      )
       return NextResponse.json({ success: false, error: message }, { status: 502 })
     }
     const data = (await response.json()) as { choices?: { message?: { content?: string } }[] }
     const output = data.choices?.[0]?.message?.content ?? ''
     if (!output) {
+      await createNotification(
+        user.id,
+        'error',
+        'Agent Execution',
+        `${config.name} failed`,
+        'OpenAI returned an empty response. Please run the agent again.',
+        slug
+      )
       return NextResponse.json({ success: false, error: 'OpenAI returned an empty response.' }, { status: 502 })
     }
     const report = parseAgentReport(output)
     if (!report) {
+      await createNotification(
+        user.id,
+        'warning',
+        'Agent Execution',
+        `${config.name} returned an invalid report`,
+        'The AI returned an invalid report structure. Please run the agent again.',
+        slug
+      )
       return NextResponse.json(
         { success: false, error: 'The AI returned an invalid report structure. Please run the agent again.' },
         { status: 502 }
@@ -67,6 +125,24 @@ export async function POST(request: Request): Promise<NextResponse> {
     const execution = await prisma.execution.create({
       data: { userId: user.id, agentName: slug, input: JSON.stringify(inputs), output },
     })
+    await createNotification(
+      user.id,
+      'success',
+      'Agent Execution',
+      `${config.name} completed`,
+      `${config.name} completed successfully.`,
+      slug,
+      execution.id
+    )
+    await createNotification(
+      user.id,
+      'success',
+      'Report',
+      'Report generated',
+      `Your ${config.name} report is ready to view and download.`,
+      slug,
+      execution.id
+    )
     return NextResponse.json({
       success: true,
       output,
@@ -79,6 +155,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       },
     })
   } catch {
+    await createNotification(
+      user.id,
+      'error',
+      'Agent Execution',
+      'Agent execution failed',
+      'Agent execution failed unexpectedly. Please try again.'
+    )
     return NextResponse.json({ success: false, error: 'Agent execution failed. Please try again.' }, { status: 500 })
   }
 }

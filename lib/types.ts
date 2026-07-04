@@ -54,6 +54,20 @@ export interface ActionResult {
   error?: string
 }
 
+export type NotificationType = 'success' | 'info' | 'warning' | 'error'
+
+export interface NotificationData {
+  id: string
+  type: NotificationType
+  category: string
+  title: string
+  message: string
+  read: boolean
+  agentSlug: string | null
+  executionId: string | null
+  createdAt: string
+}
+
 export type TrendDirection = 'up' | 'down' | 'flat'
 
 export type PriorityLevel = 'high' | 'medium' | 'low'

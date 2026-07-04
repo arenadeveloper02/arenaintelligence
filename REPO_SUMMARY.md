@@ -1,22 +1,22 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:06:19.932Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:17:04.372Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium AI platform with keyword research, content research and article recommendation agents, featuring a fixed left navigation sidebar with independently scrolling main content.
+INTELLIGENCE by Position2 — premium AI research platform with keyword, content and article agents, now with a full production-grade notification system (notification center, badge counts, toasts, browser notifications and persistent agent execution alerts).
 
 **Repository:** `arenaintelligence`  
-**File count:** 58
+**File count:** 61
 
 ## Features
 
-- Sticky left sidebar navigation that stays visible while content scrolls
-- Independently scrollable sidebar when nav content exceeds viewport height
-- Three AI agents: keyword research, content research, article recommendation
-- Secure auth with httpOnly cookie sessions and bcrypt password hashing
-- AES-256-GCM encrypted OpenAI API key storage
-- Execution history with structured report viewing and export
+- Responsive UI with Tailwind CSS
+- Next.js App Router pages and components
+- AI agent execution with OpenAI
+- Persistent notification center with unread badge, Today/Yesterday/Earlier grouping, mark-as-read and clear-all
+- Real-time toasts, browser notifications, optional sound and auto-refreshing notification count
+- Agent lifecycle notifications: started, completed, failed, report generated and export completed
 
 ## Tech Stack
 
@@ -46,7 +46,7 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 - `User`
 - `Setting`
 - `Execution`
-- `AppSetting`
+- `Notification`
 
 ## File Inventory
 
@@ -71,6 +71,8 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
+- `app/api/notifications/mark-read/route.ts`
+- `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 
 ### Components
@@ -91,6 +93,7 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
 - `components/MetricCard.tsx`
+- `components/NotificationCenter.tsx`
 - `components/ParticleCanvas.tsx`
 - `components/PremiumInput.tsx`
 - `components/RecommendationCard.tsx`
@@ -139,6 +142,8 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
+- `app/api/notifications/mark-read/route.ts`
+- `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 - `app/dashboard/page.tsx`
 - `app/globals.css`
@@ -164,6 +169,7 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
 - `components/MetricCard.tsx`
+- `components/NotificationCenter.tsx`
 - `components/ParticleCanvas.tsx`
 - `components/PremiumInput.tsx`
 - `components/RecommendationCard.tsx`
@@ -189,19 +195,127 @@ INTELLIGENCE by Position2 — a premium AI platform with keyword research, conte
 
 ## Latest Change
 
-- **Updated at:** 2026-07-04T07:06:19.932Z
-- **Request:** Fix the application layout so that after login, the left navigation menu remains permanently visible and does not scroll away with the page content.
+- **Updated at:** 2026-07-04T07:17:04.372Z
+- **Request:** Implement a fully functional notification system for Arena Intelligence.
+
+Current issue:
+The notification icon is present but does not work.
 
 Requirements:
-- The left sidebar/navigation should remain sticky or fixed within the viewport at all times.
-- Only the main content area should scroll vertically.
-- If the sidebar content exceeds the screen height, the sidebar itself should become independently scrollable.
-- The behavior should work consistently across desktop, tablet, and mobile devices.
-- The solution should support both expanded and collapsed sidebar states.
-- Ensure there are no layout shifts or visual glitches while scrolling.
-- The header (if present) should continue to behave correctly and not interfere with the sidebar behavior.
-- Remove any parent container configurations that prevent sticky positioning from working.
-- Test the behavior on long pages with large AI reports and dashboards to ensure the navigation remains visible at all times.
 
-Important:
-Do not change the design, colors, spacing, animations, or functionality of the application. Only update the layout behavior so that the left menu remains fixed/sticky while the main content scrolls independently.
+1. Make the notification icon clickable and functional.
+2. Clicking the notification icon should open a notification panel/dropdown.
+3. The panel should display:
+   - Unread notifications
+   - Read notifications
+   - Notification timestamp
+   - Notification category
+   - Mark as read option
+   - Clear all option
+
+==================================================
+AGENT EXECUTION NOTIFICATIONS
+==================================================
+
+Whenever a user runs an AI agent, create real-time notifications for the following events:
+
+- Agent execution started
+- Agent is processing
+- Agent completed successfully
+- Agent failed
+- Export completed
+- Report generated
+
+Examples:
+
+"Keyword Research Agent has started processing."
+
+"Content Research Agent completed successfully."
+
+"Your report is ready to download."
+
+==================================================
+REAL-TIME EXPERIENCE
+==================================================
+
+Implement:
+
+- Real-time notifications
+- Notification badge count
+- Toast notifications
+- Browser notifications (with permission)
+- Sound notification (optional)
+- Auto-refresh notification count
+
+==================================================
+NOTIFICATION TYPES
+==================================================
+
+1. Success
+2. Info
+3. Warning
+4. Error
+
+Each type should have its own icon and styling.
+
+==================================================
+NOTIFICATION CENTER
+==================================================
+
+The notification dropdown should support:
+
+- Today
+- Yesterday
+- Earlier
+
+Each notification should contain:
+
+- Icon
+- Title
+- Description
+- Time
+- Action button (if applicable)
+
+==================================================
+AGENT COMPLETION ALERTS
+==================================================
+
+When an agent completes:
+
+1. Show a toast notification.
+2. Increment the notification badge.
+3. Add an item to the notification center.
+4. Allow users to click the notification and navigate directly to the generated report/output.
+5. If the user is on another page, still show the notification.
+
+==================================================
+PERSISTENCE
+==================================================
+
+Notifications should persist across page refreshes and sessions.
+
+Store:
+
+- Notification ID
+- Type
+- Title
+- Message
+- Status (read/unread)
+- Timestamp
+- Related report ID
+- Related agent ID
+
+==================================================
+USER EXPERIENCE
+==================================================
+
+The notification experience should feel similar to:
+
+- Slack
+- Notion
+- GitHub
+- ChatGPT Team
+
+The notification center should look premium, modern, and fully integrated with the AI platform.
+
+Do not change any existing functionality except implementing a complete production-grade notification system.
