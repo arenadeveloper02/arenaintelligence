@@ -8,13 +8,17 @@ const RETRY_DELAY_MS = 2000
 
 // A queued job that has not been picked up within this window is considered
 // stale (the serverless invocation that scheduled it was terminated) and is
-// re-dispatched on the next poll of GET /api/jobs or GET /api/notifications.
-// Kept short so interrupted jobs resume quickly after navigation/refresh.
+// re-dispatched on the next heartbeat/poll. Kept short so interrupted jobs
+// resume quickly after navigation or refresh.
 const QUEUED_STALE_MS = 10_000
 
-// A running job whose row has not been touched (no progress heartbeat) within
-// this window is considered orphaned and is re-queued for recovery.
+// A running job whose row has not been touched (no progress or liveness
+// heartbeat) within this window is considered orphaned and is re-queued.
 const RUNNING_STALE_MS = 90_000
+
+// While a long OpenAI request is in flight the processor touches the job row
+// on this cadence so recovery never mistakes an active job for an orphan.
+const LIVENESS_HEARTBEAT_MS = 20_000
 
 interface AgentJobRow {
   id: string
@@ -180,57 +184,71 @@ export async function processJob(jobId: string): Promise<void> {
     let output: string | null = null
     let lastError = 'Agent execution failed.'
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS && !output; attempt += 1) {
-      if (await jobCancelled(jobId)) return
-      if (attempt > 1) {
-        await prisma.agentJob.updateMany({
-          where: { id: jobId, status: 'running' },
-          data: { retryCount: attempt - 1 },
-        })
-        await setProgress(jobId, 25, `Retrying (attempt ${attempt} of ${MAX_ATTEMPTS})`)
-        await delay(RETRY_DELAY_MS)
-      } else {
-        await setProgress(jobId, 35, 'Gathering data')
-      }
-      try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-          body: JSON.stringify({
-            model: 'gpt-4o-mini',
-            temperature: 0.5,
-            response_format: { type: 'json_object' },
-            messages: [
-              { role: 'system', content: SYSTEM_PROMPT },
-              { role: 'user', content: prompt },
-            ],
-          }),
-        })
-        if (!response.ok) {
-          if (response.status === 401) {
-            lastError = 'Your OpenAI API key was rejected. Update it in Settings.'
-            break
+    // Liveness heartbeat: while the (potentially long) OpenAI request is in
+    // flight there are no progress writes, so touch the job row periodically.
+    // This refreshes updatedAt and prevents recoverStaleJobs() from treating
+    // an actively running job as orphaned and double-dispatching it.
+    const heartbeat = setInterval(() => {
+      prisma.agentJob
+        .updateMany({ where: { id: jobId, status: 'running' }, data: { status: 'running' } })
+        .catch(() => undefined)
+    }, LIVENESS_HEARTBEAT_MS)
+
+    try {
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS && !output; attempt += 1) {
+        if (await jobCancelled(jobId)) return
+        if (attempt > 1) {
+          await prisma.agentJob.updateMany({
+            where: { id: jobId, status: 'running' },
+            data: { retryCount: attempt - 1 },
+          })
+          await setProgress(jobId, 25, `Retrying (attempt ${attempt} of ${MAX_ATTEMPTS})`)
+          await delay(RETRY_DELAY_MS)
+        } else {
+          await setProgress(jobId, 35, 'Gathering data')
+        }
+        try {
+          const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+            body: JSON.stringify({
+              model: 'gpt-4o-mini',
+              temperature: 0.5,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: SYSTEM_PROMPT },
+                { role: 'user', content: prompt },
+              ],
+            }),
+          })
+          if (!response.ok) {
+            if (response.status === 401) {
+              lastError = 'Your OpenAI API key was rejected. Update it in Settings.'
+              break
+            }
+            lastError = `OpenAI request failed (status ${response.status}).`
+            continue
           }
-          lastError = `OpenAI request failed (status ${response.status}).`
-          continue
+          await setProgress(jobId, 60, 'Analyzing information')
+          const data = (await response.json()) as { choices?: { message?: { content?: string } }[] }
+          const content = data.choices?.[0]?.message?.content ?? ''
+          if (!content) {
+            lastError = 'OpenAI returned an empty response.'
+            continue
+          }
+          await setProgress(jobId, 75, 'Generating insights')
+          const report = parseAgentReport(content)
+          if (!report) {
+            lastError = 'The AI returned an invalid report structure.'
+            continue
+          }
+          output = content
+        } catch {
+          lastError = 'Network error while contacting OpenAI.'
         }
-        await setProgress(jobId, 60, 'Analyzing information')
-        const data = (await response.json()) as { choices?: { message?: { content?: string } }[] }
-        const content = data.choices?.[0]?.message?.content ?? ''
-        if (!content) {
-          lastError = 'OpenAI returned an empty response.'
-          continue
-        }
-        await setProgress(jobId, 75, 'Generating insights')
-        const report = parseAgentReport(content)
-        if (!report) {
-          lastError = 'The AI returned an invalid report structure.'
-          continue
-        }
-        output = content
-      } catch {
-        lastError = 'Network error while contacting OpenAI.'
       }
+    } finally {
+      clearInterval(heartbeat)
     }
 
     if (await jobCancelled(jobId)) return

@@ -1,22 +1,22 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-06T05:26:00.972Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-06T06:23:42.353Z.
 
 ## Overview
 
-AI agent platform with background job execution — agents run server-side as persisted jobs that survive navigation, refreshes and closed tabs, with real-time progress, retries, cancellation and notifications.
+INTELLIGENCE by Position2 — a premium AI agent platform with a persistent background job system so agent executions survive navigation, refreshes and closed tabs, with real-time job monitoring and notifications.
 
 **Repository:** `arenaintelligence`  
-**File count:** 66
+**File count:** 70
 
 ## Features
 
 - Background job system persisted in Postgres (queued/running/completed/failed/cancelled)
-- Server-side agent execution decoupled from page lifecycle via after() and self-healing stale-job recovery
-- Running Jobs panel with live progress, retry and cancel
-- Notification center with badge count, toasts and click-through to reports
-- Execution history with downloadable structured reports
-- Encrypted OpenAI API key storage (AES-256-GCM)
+- Agent execution fully decoupled from page lifecycle via server-side after() execution and stale-job recovery
+- Running Jobs panel with live progress, cancel and retry
+- Notification center with badge counts, toasts and click-through to reports
+- Keyword Research, Content Research and Article Recommendation agents
+- Encrypted OpenAI API key storage and JWT session auth
 
 ## Tech Stack
 
@@ -46,8 +46,8 @@ AI agent platform with background job execution — agents run server-side as pe
 - `User`
 - `Setting`
 - `Execution`
-- `AgentJob`
 - `Notification`
+- `AgentJob`
 
 ## File Inventory
 
@@ -57,6 +57,7 @@ AI agent platform with background job execution — agents run server-side as pe
 - `app/agents/content-research/page.tsx`
 - `app/agents/keyword-research/page.tsx`
 - `app/dashboard/page.tsx`
+- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -73,6 +74,7 @@ AI agent platform with background job execution — agents run server-side as pe
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
 - `app/api/jobs/cancel/route.ts`
+- `app/api/jobs/heartbeat/route.ts`
 - `app/api/jobs/retry/route.ts`
 - `app/api/jobs/route.ts`
 - `app/api/notifications/mark-read/route.ts`
@@ -94,6 +96,7 @@ AI agent platform with background job execution — agents run server-side as pe
 - `components/HistoryClient.tsx`
 - `components/InsightCard.tsx`
 - `components/JobsIndicator.tsx`
+- `components/JobsKeepAlive.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
@@ -134,6 +137,7 @@ AI agent platform with background job execution — agents run server-side as pe
 
 - `README.md`
 - `REPO_SUMMARY.md`
+- `public/logo-mark.svg`
 
 ## Complete File Index
 
@@ -149,12 +153,14 @@ AI agent platform with background job execution — agents run server-side as pe
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
 - `app/api/jobs/cancel/route.ts`
+- `app/api/jobs/heartbeat/route.ts`
 - `app/api/jobs/retry/route.ts`
 - `app/api/jobs/route.ts`
 - `app/api/notifications/mark-read/route.ts`
 - `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 - `app/dashboard/page.tsx`
+- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -175,6 +181,7 @@ AI agent platform with background job execution — agents run server-side as pe
 - `components/HistoryClient.tsx`
 - `components/InsightCard.tsx`
 - `components/JobsIndicator.tsx`
+- `components/JobsKeepAlive.tsx`
 - `components/LandingClient.tsx`
 - `components/LoginClient.tsx`
 - `components/LogoMark.tsx`
@@ -201,12 +208,13 @@ AI agent platform with background job execution — agents run server-side as pe
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
+- `public/logo-mark.svg`
 - `tailwind.config.ts`
 - `tsconfig.json`
 
 ## Latest Change
 
-- **Updated at:** 2026-07-06T05:26:00.972Z
+- **Updated at:** 2026-07-06T06:23:42.353Z
 - **Request:** Fix the AI agent execution lifecycle so that agents continue running in the background even if the user navigates to another page.
 
 Current Behavior:

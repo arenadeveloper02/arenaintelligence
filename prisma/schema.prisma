@@ -12,10 +12,11 @@ model User {
   email         String         @unique
   password      String
   createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @default(now()) @updatedAt
   setting       Setting?
   executions    Execution[]
-  jobs          AgentJob[]
   notifications Notification[]
+  jobs          AgentJob[]
 }
 
 model Setting {
@@ -40,6 +41,23 @@ model Execution {
   @@index([userId, createdAt])
 }
 
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  category    String
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  agentSlug   String?
+  executionId String?
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+  @@index([userId, createdAt])
+}
+
 model AgentJob {
   id          String    @id @default(cuid())
   userId      String
@@ -59,21 +77,4 @@ model AgentJob {
 
   @@index([userId, status])
   @@index([userId, agentName])
-}
-
-model Notification {
-  id          String   @id @default(cuid())
-  userId      String
-  type        String   @default("info")
-  category    String   @default("General")
-  title       String
-  message     String
-  read        Boolean  @default(false)
-  agentSlug   String?
-  executionId String?
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId, read])
-  @@index([userId, createdAt])
 }

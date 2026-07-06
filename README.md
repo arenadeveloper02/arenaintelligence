@@ -1,30 +1,32 @@
 # INTELLIGENCE by Position2 (arena-planner-ai)
 
-A premium AI research workspace with three agents (Keyword Research, Content Research, Article Recommendation) that run as persistent background jobs — execution continues even if you navigate away, refresh, or close the tab.
+A premium AI agent platform for keyword research, content research and article recommendations — with a production-grade background job system so agent executions keep running even when the user navigates away, refreshes, or closes the tab.
 
 ## Features
 
-- Persistent background job system (queued → running → completed/failed/cancelled) stored in Postgres
-- Server-side agent execution fully decoupled from the page lifecycle via Next.js `after()`
-- Self-healing recovery: stale/interrupted jobs are automatically re-dispatched on the next poll
-- Running Jobs panel with live progress, cancel and retry
-- Notification center with unread badge, toasts and click-through to reports
-- Execution history with downloadable CSV / Markdown / JSON reports
-- Encrypted OpenAI API key storage (AES-256-GCM) and httpOnly cookie sessions
+- **Background job system** — every agent run is persisted as an `AgentJob` row (queued → running → completed / failed / cancelled) and executed server-side via `after()`, fully decoupled from the page lifecycle
+- **Self-healing job recovery** — stale queued/running jobs are detected via heartbeats and re-dispatched automatically from any authenticated route
+- **Running Jobs panel** — live progress, step labels, cancel and retry controls on the dashboard
+- **Notifications** — badge counts, toasts, browser notifications and click-through to generated reports
+- **Three AI agents** — Keyword Research, Content Research, Article Recommendation (OpenAI-powered)
+- **Secure by default** — AES-256-GCM encrypted API keys, bcrypt passwords, httpOnly JWT session cookies
 
-## Tech Stack
+## Tech stack
 
-- Next.js ^15.3.3 (App Router) + React ^19
-- TypeScript, Tailwind CSS v3, framer-motion, lucide-react
-- Prisma + PostgreSQL (Neon on Vercel)
+- Next.js 15 (App Router) · React 19 · TypeScript (strict)
+- Tailwind CSS 3 · framer-motion · lucide-react
+- Prisma + Neon Postgres
 
-## Local Setup
+## Local setup
 
-1. `npm install`
-2. Copy `.env.example` to `.env` and set `DATABASE_URL`
-3. `npx prisma generate && npx prisma db push`
-4. `npm run dev`
+```bash
+npm install
+cp .env.example .env   # set DATABASE_URL
+npm run dev
+```
+
+The build script runs `prisma generate && prisma db push && next build`, so the schema is pushed automatically on deploy.
 
 ## Deploy
 
-On Vercel with Neon connected, `DATABASE_URL` is injected automatically. The build script runs `prisma generate && prisma db push && next build`.
+Deploy to Vercel with a Neon Postgres database connected — `DATABASE_URL` is injected automatically. Optionally set `AUTH_SECRET` and `ENCRYPTION_SECRET` in production.
