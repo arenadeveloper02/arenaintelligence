@@ -1,32 +1,58 @@
-# INTELLIGENCE by Position2 (arena-planner-ai)
+# arena-planner-ai
 
-A premium AI agent platform for keyword research, content research and article recommendations — with a production-grade background job system so agent executions keep running even when the user navigates away, refreshes, or closes the tab.
+Edited arenaintelligence — the Keyword Research agent now runs a fixed 5-step autonomous pipeline (query variants → SERP fetch → URL scoring → keyword pull → AI shortlisting) with commercial/informational intent, optional client knowledge-base context, and a primary/secondary keyword shortlist output. All other agents and app behavior are unchanged.
 
 ## Features
 
-- **Background job system** — every agent run is persisted as an `AgentJob` row (queued → running → completed / failed / cancelled) and executed server-side via `after()`, fully decoupled from the page lifecycle
-- **Self-healing job recovery** — stale queued/running jobs are detected via heartbeats and re-dispatched automatically from any authenticated route
-- **Running Jobs panel** — live progress, step labels, cancel and retry controls on the dashboard
-- **Notifications** — badge counts, toasts, browser notifications and click-through to generated reports
-- **Three AI agents** — Keyword Research, Content Research, Article Recommendation (OpenAI-powered)
-- **Secure by default** — AES-256-GCM encrypted API keys, bcrypt passwords, httpOnly JWT session cookies
+- Autonomous 5-step Keyword Research pipeline with query variants, SERP simulation, competitor URL scoring, keyword pooling and AI shortlisting
+- Keyword Research inputs: seed keyword, intent (commercial | informational), optional client KB slug and feedback KB ids
+- Shortlist output of exactly 2 primary keywords (with reasons) and 10 secondary keywords, rendered in the existing report UI
+- Content Research and Article Recommendation agents unchanged
+- Background job execution, notifications, history and exports continue to work for all agents
 
-## Tech stack
+## Tech Stack
 
-- Next.js 15 (App Router) · React 19 · TypeScript (strict)
-- Tailwind CSS 3 · framer-motion · lucide-react
-- Prisma + Neon Postgres
+- Next.js ^15.3.3 (App Router)
+- React ^19.0.0
+- Tailwind CSS v3
+- TypeScript
+- Prisma + PostgreSQL (Neon on Vercel)
 
-## Local setup
+## Routes
+
+- `/`
+- `/agents/article-recommendation`
+- `/agents/content-research`
+- `/agents/keyword-research`
+- `/dashboard`
+- `/history`
+- `/login`
+- `/settings`
+
+## Getting Started
 
 ```bash
 npm install
-cp .env.example .env   # set DATABASE_URL
+cp .env.example .env
 npm run dev
 ```
 
-The build script runs `prisma generate && prisma db push && next build`, so the schema is pushed automatically on deploy.
+Open [http://localhost:3000](http://localhost:3000).
+
+## Database
+
+1. Copy `.env.example` to `.env` for local development
+2. Set `DATABASE_URL` to your Postgres connection string
+3. Run `npx prisma db push` before `npm run dev` if tables are missing
+
+On Vercel, `DATABASE_URL` is injected when Neon is connected to the project.
+
+## Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — production build (runs Prisma generate/push when configured)
+- `npm run start` — run the production server locally
 
 ## Deploy
 
-Deploy to Vercel with a Neon Postgres database connected — `DATABASE_URL` is injected automatically. Optionally set `AUTH_SECRET` and `ENCRYPTION_SECRET` in production.
+This project is intended for deployment on [Vercel](https://vercel.com). Connect the GitHub repository and deploy the `main` branch.

@@ -42,10 +42,9 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ notifications: [], unreadCount: 0 }, { status: 401 })
   }
   try {
-    // Self-healing: notification polling happens on every authenticated page,
-    // so use it to re-dispatch any stale queued/running jobs whose executor
-    // was interrupted. This keeps agent execution alive across navigation,
-    // refreshes and closed tabs.
+    // Self-healing: notification polling happens on every page, so use it to
+    // recover and re-dispatch any stale queued/running background jobs. This
+    // keeps agent execution fully independent of the page that started it.
     const staleIds = await recoverStaleJobs(user.id)
     if (staleIds.length > 0) {
       after(async () => {
@@ -55,15 +54,18 @@ export async function GET(): Promise<NextResponse> {
       })
     }
 
-    const [rows, unreadCount] = await Promise.all([
-      prisma.notification.findMany({
-        where: { userId: user.id },
-        orderBy: { createdAt: 'desc' },
-        take: 50,
-      }),
-      prisma.notification.count({ where: { userId: user.id, read: false } }),
-    ])
-    return NextResponse.json({ notifications: rows.map(toNotificationData), unreadCount })
+    const notifications = await prisma.notification.findMany({
+      where: { userId: user.id },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
+    })
+    const unreadCount = await prisma.notification.count({
+      where: { userId: user.id, read: false },
+    })
+    return NextResponse.json({
+      notifications: notifications.map(toNotificationData),
+      unreadCount,
+    })
   } catch {
     return NextResponse.json({ notifications: [], unreadCount: 0 }, { status: 500 })
   }
@@ -83,28 +85,25 @@ export async function POST(request: Request): Promise<NextResponse> {
       agentSlug?: string
       executionId?: string
     }
-    const title = (body.title ?? '').trim().slice(0, 140)
-    const message = (body.message ?? '').trim().slice(0, 400)
+    const type: NotificationType =
+      body.type === 'success' || body.type === 'warning' || body.type === 'error' ? body.type : 'info'
+    const title = (body.title ?? '').trim()
+    const message = (body.message ?? '').trim()
     if (!title || !message) {
       return NextResponse.json({ success: false, error: 'Title and message are required.' }, { status: 400 })
     }
-    const type =
-      body.type === 'success' || body.type === 'info' || body.type === 'warning' || body.type === 'error'
-        ? body.type
-        : 'info'
-    const category = (body.category ?? 'General').trim().slice(0, 60) || 'General'
-    const created = await prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         userId: user.id,
         type,
-        category,
+        category: (body.category ?? 'General').trim() || 'General',
         title,
         message,
-        agentSlug: body.agentSlug ? body.agentSlug.slice(0, 60) : null,
-        executionId: body.executionId ? body.executionId.slice(0, 60) : null,
+        agentSlug: body.agentSlug ?? null,
+        executionId: body.executionId ?? null,
       },
     })
-    return NextResponse.json({ success: true, notification: toNotificationData(created) })
+    return NextResponse.json({ success: true, notification: toNotificationData(notification) })
   } catch {
     return NextResponse.json({ success: false, error: 'Failed to create notification.' }, { status: 500 })
   }

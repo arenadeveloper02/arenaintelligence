@@ -6,9 +6,14 @@ import type {
   CitationItem,
   DifficultyLevel,
   InsightItem,
+  KeywordIntent,
+  KeywordRow,
+  KeywordShortlist,
   MetricItem,
+  PrimaryKeywordItem,
   PriorityLevel,
   RecommendationItem,
+  SecondaryKeywordItem,
   TimelinePhase,
   TrendDirection,
 } from '@/lib/types'
@@ -17,16 +22,17 @@ export const AGENTS: Record<AgentSlug, AgentConfig> = {
   'keyword-research': {
     slug: 'keyword-research',
     name: 'Keyword Research Agent',
-    tagline: 'Clusters, intent and opportunity scores',
-    description: 'Generate keyword clusters, classify search intent, surface long-tail keywords and score content opportunities for any seed keyword.',
+    tagline: 'Autonomous 5-step keyword shortlisting pipeline',
+    description:
+      'Runs a fixed 5-step pipeline — query variants, SERP fetch, competitor URL scoring, keyword pull and AI shortlisting — to deliver 2 primary and 10 secondary keywords with volume, difficulty and rationale.',
     gradient: 'from-indigo-500 to-cyan-400',
     fields: [
-      { name: 'seedKeyword', label: 'Seed Keyword', placeholder: 'e.g. project management software', type: 'text', required: true },
-      { name: 'country', label: 'Target Country', placeholder: 'e.g. United States', type: 'text', required: true },
-      { name: 'language', label: 'Target Language', placeholder: 'e.g. English', type: 'text', required: true },
-      { name: 'industry', label: 'Industry', placeholder: 'e.g. SaaS', type: 'text', required: true },
+      { name: 'keyword', label: 'Seed Keyword', placeholder: 'e.g. dental implants', type: 'text', required: true },
+      { name: 'intent', label: 'Intent (commercial or informational)', placeholder: 'commercial or informational', type: 'text', required: true },
+      { name: 'client', label: 'Client (optional KB context)', placeholder: 'e.g. gentle-dental', type: 'text', required: false },
+      { name: 'feedbackKbIds', label: 'Feedback KB IDs (optional)', placeholder: 'Comma-separated client-feedback KB entry ids', type: 'text', required: false },
     ],
-    actions: ['Keyword clusters', 'Search intent classification', 'Long-tail keywords', 'Content opportunities'],
+    actions: ['Query variants', 'SERP fetch', 'URL scoring', 'Keyword pull', 'AI shortlisting'],
   },
   'content-research': {
     slug: 'content-research',
@@ -84,28 +90,97 @@ const BASE_SCHEMA = [
   '  "citations": array of 3-6 objects { "source": string, "url": string, "note": string }',
 ].join('\n')
 
-const KEYWORD_SCHEMA_EXTRA =
-  '  ,"keywords": array of 15-25 objects { "keyword": string, "cluster": string, "intent": "informational" | "navigational" | "transactional" | "commercial", "volumeEstimate": string (e.g. "1.2K/mo"), "difficulty": "low" | "medium" | "high", "opportunityScore": number (0-100) }'
-
 const ARTICLE_SCHEMA_EXTRA =
   '  ,"articles": array of 6-10 objects { "title": string, "summary": string, "relevanceScore": number (0-100), "intent": string, "tags": array of 2-4 strings }'
 
 export function buildPrompt(slug: AgentSlug, inputs: Record<string, string>): string {
   const lines: string[] = []
   if (slug === 'keyword-research') {
+    const intent: KeywordIntent =
+      (inputs.intent ?? '').trim().toLowerCase() === 'commercial' ? 'commercial' : 'informational'
+    const client = (inputs.client ?? '').trim()
+    const feedbackKbIds = (inputs.feedbackKbIds ?? '').trim()
     lines.push(
-      'Act as the Keyword Research pipeline. Perform comprehensive SEO keyword research.',
+      'You are an autonomous SEO Keyword Research agent. You run a fixed 5-step pipeline and must complete every step in order, using tools where indicated. Do not skip steps or shortcut the pipeline.',
+      'In this environment your search/SERP tool and keyword-data tool (e.g. SEMrush) are simulated: perform each tool call internally using your expert SEO knowledge and produce realistic, internally consistent data (volumes, difficulties, positions, URLs). Steps 1-4 are internal working steps; only the Step 5 JSON is emitted as your final answer.',
       '',
-      `Seed keyword: ${inputs.seedKeyword ?? ''}`,
-      `Target country: ${inputs.country ?? ''}`,
-      `Target language: ${inputs.language ?? ''}`,
-      `Industry: ${inputs.industry ?? ''}`,
+      'INPUTS (required):',
+      `- keyword (seed keyword): ${inputs.keyword ?? ''}`,
+      `- intent: ${intent}`,
+      'OPTIONAL INPUTS (knowledge base context):',
+      client ? `- client: ${client} — inject this client's brand KB plus relevant industry KB into your reasoning for Step 5.` : '- client: none provided',
+      feedbackKbIds
+        ? `- feedbackKbIds: ${feedbackKbIds} — inject these specific client-feedback KB entries into Step 5.`
+        : '- feedbackKbIds: none provided',
+      client
+        ? 'Because client is set, also load and apply the best-practices KB entry "keyword-research-bp" in Step 5.'
+        : '',
       '',
-      'Cover keyword clusters, search intent classification, long-tail variations, quick wins, low-competition keywords, commercial opportunities and content gap suggestions.',
+      '═══════════════════════════════════════════',
+      'STEP 1 — QUERY VARIANTS',
+      '═══════════════════════════════════════════',
+      'Generate 5-6 query variants a real user would type into Google, based on the seed keyword and intent.',
+      '- If intent = commercial: bias toward service pages, pricing, booking, "near me", comparison, and consultation queries.',
+      '- If intent = informational: bias toward guides, FAQs, how-to, symptoms, definitions, and educational queries.',
+      '- Always include the original seed keyword as the first variant.',
+      'Internal output of this step: { "queries": ["variant 1", "variant 2", ...] }',
       '',
-      BASE_SCHEMA,
-      KEYWORD_SCHEMA_EXTRA,
-      '}'
+      '═══════════════════════════════════════════',
+      'STEP 2 — SERP FETCH (tool call)',
+      '═══════════════════════════════════════════',
+      'For EACH query variant from Step 1, call your search/SERP tool (Google US results) and collect the returned URLs.',
+      'Pool all candidate URLs across all variants into one deduplicated list.',
+      '',
+      '═══════════════════════════════════════════',
+      'STEP 3 — URL SCORING',
+      '═══════════════════════════════════════════',
+      'From the pooled candidate URLs, score and rank them using this rubric, then select the TOP 10:',
+      '- Page type relevance to the seed topic and intent (service/commercial page vs. blog/informational page, matched to intent)',
+      '- SERP position (earlier = stronger signal)',
+      '- Query coverage (how many of the 5-6 variants this URL ranked for)',
+      '- Penalize low-relevance/off-topic pages, aggregators, and directory spam',
+      'Keep the top 10 competitor URLs with scores/rationale for your own tracking.',
+      '',
+      '═══════════════════════════════════════════',
+      'STEP 4 — KEYWORD PULL (tool call)',
+      '═══════════════════════════════════════════',
+      'For each of the top 10 competitor URLs, call your keyword-data tool (e.g. SEMrush) to pull its ranking keywords, each with: keyword, volume, difficulty, position, source URL.',
+      'Deduplicate into a single pooled keyword list across all 10 URLs.',
+      '',
+      '═══════════════════════════════════════════',
+      'STEP 5 — AI SHORTLISTING (final output)',
+      '═══════════════════════════════════════════',
+      'You are now acting as an expert SEO keyword analyst working for a digital marketing agency.',
+      'You have a deduplicated pool of keywords pulled from the top-ranking competitor pages for the target topic. Each keyword includes volume, difficulty, position, and source URL.',
+      'Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords.',
+      '',
+      'PRIMARY keyword rules:',
+      '- Must semantically match the seed topic and stated intent (commercial or informational)',
+      '- Must represent distinct angles (do not pick near-duplicates)',
+      '- Include a one-sentence "reason" explaining semantic alignment, intent fit, and differentiation',
+      '- Prefer keywords with meaningful search volume and rankable difficulty',
+      '',
+      'SECONDARY keyword rules:',
+      '- Support the primary topic cluster',
+      '- Mix head terms, mid-tail, and long-tail',
+      '- Include volume and difficulty for each',
+      '- Do not repeat primary keywords',
+      '',
+      'Exclude branded competitor names unless the client IS that brand.',
+      'Exclude keywords with no meaningful connection to the seed topic.',
+      'If client/industry/feedback KB context has been provided, respect its brand voice, terminology, and any client-feedback notes when judging relevance and phrasing of "reason" fields.',
+      '',
+      'Return ONLY valid JSON with exactly this shape (volume = estimated monthly searches as a number, difficulty = 0-100 number):',
+      '{',
+      '  "primary": [',
+      '    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." },',
+      '    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." }',
+      '  ],',
+      '  "secondary": [',
+      '    { "keyword": "...", "volume": 0, "difficulty": 0 }',
+      '  ]',
+      '}',
+      'The "secondary" array must contain exactly 10 entries. Do not include any text outside this JSON object in your final step output.'
     )
   } else if (slug === 'content-research') {
     lines.push(
@@ -154,15 +229,154 @@ function asArray(v: unknown): unknown[] {
   return Array.isArray(v) ? v : []
 }
 
+function stripFences(output: string): string {
+  let text = output.trim()
+  if (text.startsWith('```')) {
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
+  }
+  return text
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max)
+}
+
+function formatVolume(v: number): string {
+  if (v >= 1000000) return `${(v / 1000000).toFixed(1).replace(/\.0$/, '')}M/mo`
+  if (v >= 1000) return `${(v / 1000).toFixed(1).replace(/\.0$/, '')}K/mo`
+  return `${Math.max(Math.round(v), 0)}/mo`
+}
+
+function difficultyLabel(d: number): string {
+  if (d <= 35) return 'low'
+  if (d <= 65) return 'medium'
+  return 'high'
+}
+
+function difficultyLevel(d: number): DifficultyLevel {
+  if (d <= 35) return 'easy'
+  if (d <= 65) return 'medium'
+  return 'hard'
+}
+
+/**
+ * Parses the Keyword Research agent's Step 5 shortlist output:
+ * { "primary": [{ keyword, volume, difficulty, reason }], "secondary": [{ keyword, volume, difficulty }] }
+ */
+export function parseKeywordShortlist(output: string): KeywordShortlist | null {
+  try {
+    const raw: unknown = JSON.parse(stripFences(output))
+    const obj = asRecord(raw)
+    if (!Array.isArray(obj.primary) || !Array.isArray(obj.secondary)) return null
+
+    const primary: PrimaryKeywordItem[] = asArray(obj.primary)
+      .map((item) => {
+        const r = asRecord(item)
+        return {
+          keyword: asString(r.keyword),
+          volume: asNumber(r.volume, 0),
+          difficulty: asNumber(r.difficulty, 50),
+          reason: asString(r.reason),
+        }
+      })
+      .filter((k) => k.keyword.length > 0)
+
+    const secondary: SecondaryKeywordItem[] = asArray(obj.secondary)
+      .map((item) => {
+        const r = asRecord(item)
+        return {
+          keyword: asString(r.keyword),
+          volume: asNumber(r.volume, 0),
+          difficulty: asNumber(r.difficulty, 50),
+        }
+      })
+      .filter((k) => k.keyword.length > 0)
+
+    if (primary.length === 0) return null
+    return { primary, secondary }
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Adapts a keyword shortlist into the shared AgentReport shape so the
+ * existing report UI, history and exports render it without changes.
+ */
+function shortlistToReport(shortlist: KeywordShortlist): AgentReport {
+  const { primary, secondary } = shortlist
+  const all = [...primary, ...secondary]
+  const avgVolume = all.length > 0 ? all.reduce((s, k) => s + k.volume, 0) / all.length : 0
+  const avgDifficulty = all.length > 0 ? all.reduce((s, k) => s + k.difficulty, 0) / all.length : 0
+
+  const metrics: MetricItem[] = [
+    { label: 'Primary keywords', value: String(primary.length), trend: 'flat', context: 'Shortlisted primary targets' },
+    { label: 'Secondary keywords', value: String(secondary.length), trend: 'flat', context: 'Supporting cluster keywords' },
+    { label: 'Avg. search volume', value: formatVolume(avgVolume), trend: 'up', context: 'Estimated monthly searches across the shortlist' },
+    { label: 'Avg. difficulty', value: String(Math.round(avgDifficulty)), trend: 'flat', context: 'Estimated ranking difficulty (0-100)' },
+  ]
+
+  const insights: InsightItem[] = primary.map((p) => ({
+    title: `Primary target: ${p.keyword}`,
+    description: p.reason || 'Shortlisted as a primary keyword for this topic and intent.',
+    impactScore: clamp(100 - p.difficulty, 0, 100),
+    confidence: 80,
+  }))
+
+  const recommendations: RecommendationItem[] = primary.map((p) => ({
+    title: `Target "${p.keyword}" as a primary keyword`,
+    description: p.reason || 'Build a dedicated page optimized for this primary keyword.',
+    priority: 'high' as PriorityLevel,
+    impact: `~${formatVolume(p.volume)} estimated search volume`,
+    difficulty: difficultyLevel(p.difficulty),
+  }))
+
+  const keywords: KeywordRow[] = [
+    ...primary.map((p) => ({
+      keyword: p.keyword,
+      cluster: 'Primary',
+      intent: 'primary',
+      volumeEstimate: formatVolume(p.volume),
+      difficulty: difficultyLabel(p.difficulty),
+      opportunityScore: clamp(100 - p.difficulty, 0, 100),
+    })),
+    ...secondary.map((s) => ({
+      keyword: s.keyword,
+      cluster: 'Secondary',
+      intent: 'secondary',
+      volumeEstimate: formatVolume(s.volume),
+      difficulty: difficultyLabel(s.difficulty),
+      opportunityScore: clamp(100 - s.difficulty, 0, 100),
+    })),
+  ]
+
+  const primaryNames = primary.map((p) => `"${p.keyword}"`).join(' and ')
+  const executiveSummary = `The autonomous 5-step keyword research pipeline (query variants, SERP fetch, competitor URL scoring, keyword pull, AI shortlisting) shortlisted ${primary.length} primary and ${secondary.length} secondary keywords. Primary targets: ${primaryNames}. Each primary keyword was selected for semantic alignment with the seed topic, intent fit and a distinct angle, while secondary keywords mix head, mid-tail and long-tail terms that support the topic cluster. All volumes and difficulties are realistic estimates derived from competitor keyword pulls.`
+
+  return {
+    title: 'Keyword Shortlist: Primary & Secondary Targets',
+    executiveSummary,
+    confidenceScore: 85,
+    metrics,
+    insights,
+    recommendations,
+    keywords,
+    actionPlan: [],
+    citations: [],
+  }
+}
+
 export function parseAgentReport(output: string): AgentReport | null {
   try {
-    let text = output.trim()
-    if (text.startsWith('```')) {
-      text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '')
-    }
+    const text = stripFences(output)
     const raw: unknown = JSON.parse(text)
     const obj = asRecord(raw)
-    if (typeof obj.executiveSummary !== 'string' || obj.executiveSummary.length === 0) return null
+    if (typeof obj.executiveSummary !== 'string' || obj.executiveSummary.length === 0) {
+      // The Keyword Research agent's 5-step pipeline emits a shortlist shape
+      // ({ primary, secondary }) instead of the base report schema — adapt it.
+      const shortlist = parseKeywordShortlist(output)
+      return shortlist ? shortlistToReport(shortlist) : null
+    }
 
     const metrics: MetricItem[] = asArray(obj.metrics).map((item) => {
       const r = asRecord(item)

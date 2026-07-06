@@ -159,3 +159,23 @@ export interface AgentReport {
   actionPlan: TimelinePhase[]
   citations: CitationItem[]
 }
+
+export type KeywordIntent = 'commercial' | 'informational'
+
+export interface PrimaryKeywordItem {
+  keyword: string
+  volume: number
+  difficulty: number
+  reason: string
+}
+
+export interface SecondaryKeywordItem {
+  keyword: string
+  volume: number
+  difficulty: number
+}
+
+export interface KeywordShortlist {
+  primary: PrimaryKeywordItem[]
+  secondary: SecondaryKeywordItem[]
+}

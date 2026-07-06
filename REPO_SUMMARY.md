@@ -1,22 +1,23 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-06T06:23:42.353Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-06T07:36:04.612Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium AI agent platform with a persistent background job system so agent executions survive navigation, refreshes and closed tabs, with real-time job monitoring and notifications.
+INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and article research with background agent jobs, notifications, and encrypted API key storage.
 
 **Repository:** `arenaintelligence`  
-**File count:** 70
+**File count:** 67
 
 ## Features
 
-- Background job system persisted in Postgres (queued/running/completed/failed/cancelled)
-- Agent execution fully decoupled from page lifecycle via server-side after() execution and stale-job recovery
-- Running Jobs panel with live progress, cancel and retry
-- Notification center with badge counts, toasts and click-through to reports
-- Keyword Research, Content Research and Article Recommendation agents
-- Encrypted OpenAI API key storage and JWT session auth
+- Autonomous 5-step Keyword Research agent pipeline (query variants, SERP fetch, URL scoring, keyword pull, AI shortlisting)
+- Content Research and Article Recommendation agents
+- Background job execution with recovery, retry and cancel
+- Notification center with polling, toasts and browser notifications
+- Encrypted OpenAI API key storage (AES-256-GCM)
+- JWT session auth with httpOnly cookies
+- Execution history with structured report viewing and exports
 
 ## Tech Stack
 
@@ -43,11 +44,12 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 
 ## Database Models
 
+- `AppSetting`
 - `User`
 - `Setting`
 - `Execution`
-- `Notification`
 - `AgentJob`
+- `Notification`
 
 ## File Inventory
 
@@ -57,7 +59,6 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 - `app/agents/content-research/page.tsx`
 - `app/agents/keyword-research/page.tsx`
 - `app/dashboard/page.tsx`
-- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -77,7 +78,6 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 - `app/api/jobs/heartbeat/route.ts`
 - `app/api/jobs/retry/route.ts`
 - `app/api/jobs/route.ts`
-- `app/api/notifications/mark-read/route.ts`
 - `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 
@@ -137,7 +137,6 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 
 - `README.md`
 - `REPO_SUMMARY.md`
-- `public/logo-mark.svg`
 
 ## Complete File Index
 
@@ -156,11 +155,9 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 - `app/api/jobs/heartbeat/route.ts`
 - `app/api/jobs/retry/route.ts`
 - `app/api/jobs/route.ts`
-- `app/api/notifications/mark-read/route.ts`
 - `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 - `app/dashboard/page.tsx`
-- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -208,138 +205,99 @@ INTELLIGENCE by Position2 — a premium AI agent platform with a persistent back
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
-- `public/logo-mark.svg`
 - `tailwind.config.ts`
 - `tsconfig.json`
 
 ## Latest Change
 
-- **Updated at:** 2026-07-06T06:23:42.353Z
-- **Request:** Fix the AI agent execution lifecycle so that agents continue running in the background even if the user navigates to another page.
+- **Updated at:** 2026-07-06T07:36:04.612Z
+- **Request:** I want to change the existing Keyword research agent to this logic:
+You are an autonomous SEO Keyword Research agent. You run a fixed 5-step pipeline and must complete every step in order, using tools where indicated. Do not skip steps or shortcut the pipeline.
 
-Current Behavior:
-- User starts an agent.
-- User navigates to another page (for example, Home).
-- The agent execution stops or gets cancelled.
+INPUTS (required):
+- keyword (string): seed keyword
+- intent (enum): "commercial" | "informational"
+OPTIONAL INPUTS (knowledge base context):
+- client (string): client slug (e.g. "gentle-dental"). If provided, inject that client's brand KB + relevant industry KB into your reasoning for Step 5.
+- feedbackKbIds (string[]): specific client-feedback KB entries to inject into Step 5.
 
-Expected Behavior:
-- Agent execution must continue in the background regardless of page navigation.
-- The user should be able to leave the page, browse other sections of the application, and return later.
-- Once the agent completes, the user should receive a notification.
+If `client` is set, also load and apply the best-practices KB entry "keyword-research-bp" in Step 5.
 
-==================================================
-BACKGROUND EXECUTION REQUIREMENTS
-==================================================
+═══════════════════════════════════════════
+STEP 1 — QUERY VARIANTS
+═══════════════════════════════════════════
+Generate 5–6 query variants a real user would type into Google, based on the seed keyword and intent.
 
-Implement a proper asynchronous job system.
+- If intent = commercial: bias toward service pages, pricing, booking, "near me", comparison, and consultation queries.
+- If intent = informational: bias toward guides, FAQs, how-to, symptoms, definitions, and educational queries.
+- Always include the original seed keyword as the first variant.
 
-When an agent starts:
+Output ONLY:
+{ "queries": ["variant 1", "variant 2", ...] }
 
-1. Create a Job ID.
-2. Persist the job in the database.
-3. Mark status as:
-   - Queued
-   - Running
-   - Completed
-   - Failed
-4. Execute the agent independently from the current page lifecycle.
+═══════════════════════════════════════════
+STEP 2 — SERP FETCH (tool call)
+═══════════════════════════════════════════
+For EACH query variant from Step 1, call your search/SERP tool (Google US results) and collect the returned URLs.
+Pool all candidate URLs across all variants into one deduplicated list.
 
-The execution should not depend on:
-- Component state
-- Browser tab state
-- Current route
-- React component mounting/unmounting
+═══════════════════════════════════════════
+STEP 3 — URL SCORING
+═══════════════════════════════════════════
+From the pooled candidate URLs, score and rank them using this rubric, then select the TOP 10:
+- Page type relevance to the seed topic and intent (service/commercial page vs. blog/informational page, matched to `intent`)
+- SERP position (earlier = stronger signal)
+- Query coverage (how many of the 5–6 variants this URL ranked for)
+- Penalize low-relevance/off-topic pages, aggregators, and directory spam
 
-==================================================
-JOB MANAGEMENT
-==================================================
+Output the top 10 competitor URLs with scores/rationale for your own tracking.
 
-Create a background job manager that supports:
+═══════════════════════════════════════════
+STEP 4 — KEYWORD PULL (tool call)
+═══════════════════════════════════════════
+For each of the top 10 competitor URLs, call your keyword-data tool (e.g. SEMrush) to pull its ranking keywords, each with: keyword, volume, difficulty, position, source URL.
+Deduplicate into a single pooled keyword list across all 10 URLs.
 
-- Queueing
-- Retry logic
-- Progress updates
-- Cancellation
-- Error handling
-- Execution history
+═══════════════════════════════════════════
+STEP 5 — AI SHORTLISTING (final output)
+═══════════════════════════════════════════
+You are now acting as an expert SEO keyword analyst working for a digital marketing agency.
 
-==================================================
-REAL-TIME STATUS UPDATES
-==================================================
+You have a deduplicated pool of keywords pulled from the top-ranking competitor pages for the target topic. Each keyword includes volume, difficulty, position, and source URL.
 
-Users should be able to see:
+Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords.
 
-- Running agents
-- Completed agents
-- Failed agents
-- Estimated progress
+PRIMARY keyword rules:
+- Must semantically match the seed topic and stated intent (commercial or informational)
+- Must represent distinct angles (do not pick near-duplicates)
+- Include a one-sentence "reason" explaining semantic alignment, intent fit, and differentiation
+- Prefer keywords with meaningful search volume and rankable difficulty
 
-Add a "Running Jobs" section in the application where users can monitor all active agent executions.
+SECONDARY keyword rules:
+- Support the primary topic cluster
+- Mix head terms, mid-tail, and long-tail
+- Include volume and difficulty for each
+- Do not repeat primary keywords
 
-==================================================
-NOTIFICATIONS
-==================================================
+Exclude branded competitor names unless the client IS that brand.
+Exclude keywords with no meaningful connection to the seed topic.
 
-When a background job finishes:
+If client/industry/feedback KB context has been provided, respect its brand voice, terminology, and any client-feedback notes when judging relevance and phrasing of "reason" fields.
 
-- Show a notification.
-- Increase notification badge count.
-- Store the notification.
-- Allow the user to click the notification and open the generated report.
+Return ONLY valid JSON:
+{
+  "primary": [
+    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." },
+    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." }
+  ],
+  "secondary": [
+    { "keyword": "...", "volume": 0, "difficulty": 0 }
+  ]
+}
 
-Example notifications:
+Do not include any text outside this JSON object in your final step output.
 
-"Keyword Research Agent completed successfully."
 
-"Content Research Agent report is ready."
 
-"Article Recommendation Agent failed. Click to retry."
-
-==================================================
-PAGE NAVIGATION BEHAVIOR
-==================================================
-
-Scenario:
-
-1. User starts Keyword Research Agent.
-2. User navigates to Home.
-3. User opens Settings.
-4. User refreshes the page.
-5. User comes back after several minutes.
-
-Expected:
-- The agent should still be running or already completed.
-- The generated report should still be available.
-- Notifications should still be present.
-
-==================================================
-PERSISTENCE
-==================================================
-
-Persist:
-
-- Job ID
-- Agent ID
-- User ID
-- Input parameters
-- Execution status
-- Progress
-- Start time
-- Completion time
-- Output location
-- Error details
-
-==================================================
-ARCHITECTURE
-==================================================
-
-Implement a production-grade background processing architecture similar to:
-
-- ChatGPT Tasks
-- Notion AI
-- GitHub Actions
-- Long-running report generation systems
-
-The UI should never block or cancel agent execution simply because the user navigates to another page.
-
-Agent execution must be completely decoupled from the page lifecycle and continue running until completion or failure.
+NOTE:
+MAKE SURE THAT THIS WILL EFFECT ONLY THIS SPECIF AGENT AND WONT MAKE ANY OTHER CHANGES
