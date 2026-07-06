@@ -111,57 +111,43 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!report) {
       await createNotification(
         user.id,
-        'warning',
+        'error',
         'Agent Execution',
-        `${config.name} returned an invalid report`,
+        `${config.name} failed`,
         'The AI returned an invalid report structure. Please run the agent again.',
         slug
       )
       return NextResponse.json(
-        { success: false, error: 'The AI returned an invalid report structure. Please run the agent again.' },
+        { success: false, error: 'The AI returned an invalid report structure.' },
         { status: 502 }
       )
     }
     const execution = await prisma.execution.create({
-      data: { userId: user.id, agentName: slug, input: JSON.stringify(inputs), output },
+      data: {
+        userId: user.id,
+        agentName: slug,
+        input: JSON.stringify(inputs),
+        output,
+      },
     })
     await createNotification(
       user.id,
       'success',
       'Agent Execution',
       `${config.name} completed`,
-      `${config.name} completed successfully.`,
-      slug,
-      execution.id
-    )
-    await createNotification(
-      user.id,
-      'success',
-      'Report',
-      'Report generated',
-      `Your ${config.name} report is ready to view and download.`,
+      `${config.name} completed successfully. Your report is ready to view.`,
       slug,
       execution.id
     )
     return NextResponse.json({
       success: true,
+      executionId: execution.id,
       output,
-      execution: {
-        id: execution.id,
-        agentName: execution.agentName,
-        input: execution.input,
-        output: execution.output,
-        createdAt: execution.createdAt.toISOString(),
-      },
     })
   } catch {
-    await createNotification(
-      user.id,
-      'error',
-      'Agent Execution',
-      'Agent execution failed',
-      'Agent execution failed unexpectedly. Please try again.'
+    return NextResponse.json(
+      { success: false, error: 'Agent execution failed. Please try again.' },
+      { status: 500 }
     )
-    return NextResponse.json({ success: false, error: 'Agent execution failed. Please try again.' }, { status: 500 })
   }
 }

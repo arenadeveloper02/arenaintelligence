@@ -95,496 +95,252 @@ export const SYSTEM_PROMPT = [
   'Every report must read like a consulting deliverable produced by an elite strategy team.',
 ].join(' ')
 
+const REPORT_SCHEMA_LINES: string[] = [
+  '',
+  '═══════════════════════════════════════════',
+  'FINAL OUTPUT FORMAT (mandatory)',
+  '═══════════════════════════════════════════',
+  'Return ONLY a single valid JSON object with exactly this schema. No markdown, no code fences, no text before or after the JSON.',
+  '{',
+  '  "title": "string — report title",',
+  '  "executiveSummary": "string — 3 to 5 sentence executive summary of findings",',
+  '  "confidenceScore": number between 0 and 100,',
+  '  "metrics": [ { "label": "string", "value": "string", "trend": "up" | "down" | "flat", "context": "string" } ],',
+  '  "insights": [ { "title": "string", "description": "string", "impactScore": number 0-100, "confidence": number 0-100 } ],',
+  '  "recommendations": [ { "title": "string", "description": "string", "priority": "high" | "medium" | "low", "impact": "string", "difficulty": "easy" | "medium" | "hard" } ],',
+  '  "keywords": [ { "keyword": "string", "cluster": "string", "intent": "string", "volumeEstimate": "string", "difficulty": "string", "opportunityScore": number 0-100 } ],',
+  '  "articles": [ { "title": "string", "summary": "string", "relevanceScore": number 0-100, "intent": "string", "tags": ["string"] } ],',
+  '  "intentDistribution": [ { "label": "string", "value": number } ],',
+  '  "actionPlan": [ { "phase": "string", "actions": ["string"] } ],',
+  '  "citations": [ { "source": "string", "url": "string", "note": "string" } ]',
+  '}',
+  'Include at least 3 metrics, 3 insights, 3 recommendations, a 3-4 phase actionPlan and 3-6 citations. Arrays that do not apply to this agent may be empty arrays, never omitted.',
+]
+
+function kbContextLines(client: string, feedbackKbIds: string): string[] {
+  const lines: string[] = ['OPTIONAL INPUTS (knowledge base context):']
+  if (client) {
+    lines.push(
+      `- client: ${client} — inject this client's brand KB plus the relevant industry KB into your reasoning (available clients: ${KB_CLIENTS.join(', ')}).`
+    )
+  } else {
+    lines.push('- client: none provided')
+  }
+  if (feedbackKbIds) {
+    lines.push(`- feedbackKbIds: ${feedbackKbIds} — inject these specific client-feedback KB entries into your reasoning.`)
+  } else {
+    lines.push('- feedbackKbIds: none provided')
+  }
+  return lines
+}
+
 export function buildPrompt(slug: AgentSlug, inputs: Record<string, string>): string {
   const lines: string[] = []
+  const client = (inputs.client ?? '').trim()
+  const feedbackKbIds = (inputs.feedbackKbIds ?? '').trim()
+
   if (slug === 'keyword-research') {
     const intent: KeywordIntent =
       (inputs.intent ?? '').trim().toLowerCase() === 'commercial' ? 'commercial' : 'informational'
-    const client = (inputs.client ?? '').trim()
-    const feedbackKbIds = (inputs.feedbackKbIds ?? '').trim()
     lines.push(
-      'You are an autonomous SEO Keyword Research agent. You run a fixed 5-step pipeline and must complete every step in order, using tools where indicated. Do not skip steps or shortcut the pipeline.',
-      'In this environment your search/SERP tool and keyword-data tool (e.g. SEMrush) are simulated: perform each tool call internally using your expert SEO knowledge and produce realistic, internally consistent data (volumes, difficulties, positions, URLs). Steps 1-4 are internal working steps; only the Step 5 JSON is emitted as your final answer.',
+      'You are an autonomous SEO Keyword Research agent. You run a fixed 5-step pipeline and must complete every step in order. Do not skip steps or shortcut the pipeline.',
+      'In this environment your search/SERP tool and keyword-data tool (e.g. SEMrush) are simulated: perform each tool call internally using your expert SEO knowledge and produce realistic, internally consistent data (volumes, difficulties, positions, URLs). Steps 1-4 are internal working steps; only the Step 5 report is emitted as your final answer.',
       '',
       'INPUTS (required):',
       `- keyword (seed keyword): ${inputs.keyword ?? ''}`,
       `- intent: ${intent}`,
-      'OPTIONAL INPUTS (knowledge base context):',
-      client
-        ? `- client: ${client} — inject this client's brand KB plus relevant industry KB into your reasoning for Step 5 (available clients: ${KB_CLIENTS.join(', ')}).`
-        : '- client: none provided',
-      feedbackKbIds
-        ? `- feedbackKbIds: ${feedbackKbIds} — inject these specific client-feedback KB entries into Step 5.`
-        : '- feedbackKbIds: none provided',
-      client
-        ? 'Because client is set, also load and apply the best-practices KB entry "keyword-research-bp" in Step 5.'
-        : '',
+      ...kbContextLines(client, feedbackKbIds),
+      client ? 'Because client is set, also load and apply the best-practices KB entry "keyword-research-bp" in Step 5.' : '',
       '',
-      '═══════════════════════════════════════════',
-      'STEP 1 — QUERY VARIANTS',
-      '═══════════════════════════════════════════',
-      'You are an expert SEO keyword strategist. Generate 5-6 query variants a real user would type into Google, based on the seed keyword and intent.',
-      '- If intent = commercial: focus on service pages, pricing, booking, "near me", comparison, and consultation queries.',
-      '- If intent = informational: focus on guides, FAQs, how-to, symptoms, definitions, and educational queries.',
-      '- Always include the original seed keyword as the first variant.',
-      'Internal output of this step: { "queries": ["variant 1", "variant 2", ...] }',
-      '',
-      '═══════════════════════════════════════════',
-      'STEP 2 — SERP FETCH (tool call)',
-      '═══════════════════════════════════════════',
-      'For EACH query variant from Step 1, call your search/SERP tool (Google US results) and collect the returned URLs.',
-      'Pool all candidate URLs across all variants into one deduplicated list.',
-      '',
-      '═══════════════════════════════════════════',
-      'STEP 3 — URL SCORING',
-      '═══════════════════════════════════════════',
-      'From the pooled candidate URLs, score and rank them using this rubric, then select the TOP 10:',
-      '- Page type relevance to the seed topic and intent (service/commercial page vs. blog/informational page, matched to intent)',
-      '- SERP position (earlier = stronger signal)',
-      '- Query coverage (how many of the 5-6 variants this URL ranked for)',
-      '- Penalize low-relevance/off-topic pages, aggregators, and directory spam',
-      'Keep the top 10 competitor URLs with scores/rationale for your own tracking.',
-      '',
-      '═══════════════════════════════════════════',
-      'STEP 4 — KEYWORD PULL (tool call)',
-      '═══════════════════════════════════════════',
-      'For each of the top 10 competitor URLs, call your keyword-data tool (e.g. SEMrush) to pull its ranking keywords, each with: keyword, volume, difficulty, position, source URL.',
-      'Deduplicate into a single pooled keyword list across all 10 URLs.',
-      '',
-      '═══════════════════════════════════════════',
-      'STEP 5 — AI SHORTLISTING (final output)',
-      '═══════════════════════════════════════════',
-      'You are now acting as an expert SEO keyword analyst working for a digital marketing agency.',
-      'You have a deduplicated pool of keywords pulled from the top-ranking competitor pages for the target topic. Each keyword includes volume, difficulty, position, and source URL.',
-      'Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords for a content/SEO campaign.',
-      '',
-      'PRIMARY keyword rules:',
-      '- Must semantically match the seed topic and stated intent (commercial or informational)',
-      '- Must represent distinct angles (do not pick near-duplicates)',
-      '- Include a one-sentence "reason" explaining semantic alignment, intent fit, and differentiation',
-      '- Prefer keywords with meaningful search volume and rankable difficulty',
-      '',
-      'SECONDARY keyword rules:',
-      '- Support the primary topic cluster',
-      '- Mix head terms, mid-tail, and long-tail',
-      '- Include volume and difficulty for each',
-      '- Do not repeat primary keywords',
-      '',
-      'Exclude branded competitor names unless the client IS that brand.',
-      'Exclude keywords with no meaningful connection to the seed topic.',
-      'If client/industry/feedback KB context has been provided, respect its brand voice, terminology, and any client-feedback notes when judging relevance and phrasing of "reason" fields.',
-      '',
-      'Return ONLY valid JSON with exactly this shape (volume = estimated monthly searches as a number, difficulty = 0-100 number):',
-      '{',
-      '  "primary": [',
-      '    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." },',
-      '    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." }',
-      '  ],',
-      '  "secondary": [',
-      '    { "keyword": "...", "volume": 0, "difficulty": 0 }',
-      '  ]',
-      '}',
-      'The "secondary" array must contain exactly 10 entries. Do not include any text outside this JSON object in your final step output.'
+      'STEP 1 — QUERY VARIANTS: Generate 5-6 query variants a real user would type into Google, based on the seed keyword and intent. Commercial intent: service pages, pricing, booking, "near me", comparison and consultation queries. Informational intent: guides, FAQs, how-to, symptoms, definitions and educational queries. Always include the original seed keyword as the first variant.',
+      'STEP 2 — SERP FETCH (tool call): For each query variant, call your search/SERP tool (Google US results) and collect the returned URLs. Pool all candidate URLs across all variants into one deduplicated list.',
+      'STEP 3 — URL SCORING: Score and rank the pooled candidate URLs by page-type relevance to the seed topic and intent, SERP position, and query coverage. Penalize off-topic pages, aggregators and directory spam. Keep the top 10 competitor URLs.',
+      'STEP 4 — KEYWORD PULL (tool call): For each of the top 10 competitor URLs, pull its ranking keywords with keyword, volume, difficulty, position and source URL. Deduplicate into a single pooled keyword list.',
+      'STEP 5 — AI SHORTLISTING (final output): Acting as an expert SEO keyword analyst, shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords from the pool.',
+      'PRIMARY rules: must semantically match the seed topic and stated intent, must represent distinct angles, must have meaningful volume and rankable difficulty. SECONDARY rules: support the primary topic cluster with a mix of head, mid-tail and long-tail terms; do not repeat primary keywords. Exclude branded competitor names unless the client IS that brand, and exclude keywords with no meaningful connection to the seed topic.',
+      'Map the shortlist into the final report: put all 12 shortlisted keywords in the "keywords" array with cluster set to "primary" or "secondary", intent set to the stated intent, volumeEstimate as an estimated monthly-search string, difficulty as "low" | "medium" | "high" and a 0-100 opportunityScore. Explain the rationale for each primary keyword in "insights", summarize the pipeline in "metrics" and "executiveSummary", provide next steps in "recommendations" and "actionPlan", and list simulated data sources in "citations". Set "intentDistribution" to the intent mix of the pooled keywords.'
     )
   } else if (slug === 'content-research') {
-    const client = (inputs.client ?? '').trim()
-    const feedbackKbIds = (inputs.feedbackKbIds ?? '').trim()
+    const competitorUrls = (inputs.competitorUrls ?? '').trim()
     lines.push(
       'You are a senior SEO content strategist running the Content Research (SERP Analysis) pipeline.',
-      'In this environment your SERP fetch and page-scraping tools are simulated: internally retrieve the top-ranking Google pages for the target keyword and scrape their titles, headings and content using your expert SEO knowledge, producing realistic, internally consistent data. Only the final JSON brief is emitted.',
+      'In this environment your SERP fetch and page-scraping tools are simulated: perform each tool call internally using your expert SEO knowledge and produce realistic, internally consistent data.',
       '',
-      'INPUTS:',
+      'INPUTS (required):',
       `- keyword (target keyword): ${inputs.keyword ?? ''}`,
-      `- industry: ${(inputs.industry ?? '').trim() || 'not specified'}`,
-      `- competitorUrls: ${(inputs.competitorUrls ?? '').trim() || 'none provided — rely on simulated SERP results'}`,
-      client
-        ? `- client: ${client} — inject this client's brand KB plus relevant industry KB (available clients: ${KB_CLIENTS.join(', ')}), and apply the best-practices KB entry "article-creation".`
-        : '- client: none provided',
-      feedbackKbIds
-        ? `- feedbackKbIds: ${feedbackKbIds} — apply these client-feedback KB entries (brand voice, compliance rules, terminology).`
-        : '- feedbackKbIds: none provided',
+      `- industry: ${(inputs.industry ?? '').trim() || 'not provided — infer from the keyword'}`,
+      competitorUrls
+        ? `- competitorUrls (analyze these in addition to the SERP): ${competitorUrls.split(/\n+/).map((u) => u.trim()).filter(Boolean).join(', ')}`
+        : '- competitorUrls: none provided — rely on the simulated SERP top 10',
+      ...kbContextLines(client, feedbackKbIds),
       '',
-      'Analyze the scraped content from the top-ranking pages for the target keyword. Produce a content research brief a writer can act on immediately.',
-      '',
-      'Focus on:',
-      '1. Common H2/H3 patterns across ranking pages',
-      '2. Word count benchmarks (min, max, median, recommended target)',
-      '3. Semantic keywords and entities the top pages cover',
-      '4. Content gaps — topics/questions competitors answer that should be included',
-      '5. Recommended article structure (section-by-section)',
-      '',
-      'Respect any client brand voice, compliance rules, and terminology from the knowledge base context above.',
-      '',
-      'Return ONLY valid JSON with exactly this shape:',
-      '{',
-      '  "sections": [',
-      '    { "heading": "H2 or H3 text", "frequency": "how many top pages use this", "notes": "what to cover in this section" }',
-      '  ],',
-      '  "wordCountBenchmark": { "min": 0, "max": 0, "median": 0, "recommended": 0 },',
-      '  "semanticKeywords": ["..."],',
-      '  "contentGaps": ["gap or question to address"]',
-      '}',
-      'Do not include any text outside this JSON object.'
+      'PIPELINE: (1) Fetch the top 10 ranking pages for the target keyword. (2) Scrape each page and extract its H2/H3 structure, word count and covered subtopics. (3) Identify common heading patterns and how frequently each appears across the top 10. (4) Compute word-count benchmarks (min, max, median, recommended target). (5) Extract semantic and related keywords the top pages consistently use. (6) Identify content gaps — questions and subtopics users care about that the top pages under-serve.',
+      'Map the deliverables into the final report: put semantic and related keywords in the "keywords" array (cluster "semantic" or "related", with intent, volumeEstimate, difficulty and opportunityScore). Put common H2/H3 patterns and their frequency in "insights". Put word-count benchmarks and SERP statistics in "metrics". Put content-gap opportunities in "recommendations". Put a writer-ready production sequence in "actionPlan". List the analyzed (simulated) top-ranking URLs in "citations". Set "intentDistribution" to the intent mix observed across the top-ranking pages. Leave "articles" as an empty array.'
     )
   } else {
-    const client = (inputs.client ?? '').trim()
-    const feedbackKbIds = (inputs.feedbackKbIds ?? '').trim()
     lines.push(
-      'You are an expert SEO content brief architect running the Article Recommendation (Full Brief) pipeline.',
-      'In this environment your SERP fetch and page-scraping tools are simulated: internally retrieve and scrape the top-10 SERP pages for the target keyword using your expert SEO knowledge, producing realistic, internally consistent data. Only the final JSON brief is emitted.',
+      'You are a senior SEO content strategist running the Article Recommendation pipeline: you turn a scraped top-10 SERP analysis into a complete, ready-to-write article brief.',
+      'In this environment your SERP fetch and page-scraping tools are simulated: perform each tool call internally using your expert SEO knowledge and produce realistic, internally consistent data.',
       '',
-      'INPUTS:',
+      'INPUTS (required):',
       `- keyword (target keyword): ${inputs.keyword ?? ''}`,
-      client
-        ? `- client: ${client} — inject this client's brand KB plus relevant industry KB (available clients: ${KB_CLIENTS.join(', ')}), and apply the best-practices KB entry "article-creation".`
-        : '- client: none provided',
-      feedbackKbIds
-        ? `- feedbackKbIds: ${feedbackKbIds} — apply these client-feedback KB entries (brand voice, compliance rules, terminology).`
-        : '- feedbackKbIds: none provided',
+      ...kbContextLines(client, feedbackKbIds),
       '',
-      'Using the scraped top-10 SERP pages for the target keyword, produce a complete, ready-to-write article brief.',
-      '',
-      'The brief must include:',
-      '- Recommended H1 (one option, compelling, keyword-natural)',
-      '- Full H2/H3 outline mapped to search intent',
-      '- Per-section writing instructions (tone, depth, what to include)',
-      '- Primary and secondary keywords assigned to each section',
-      '- FAQ section: 5-10 questions extracted from PAA/competitor patterns, each with answer guidance',
-      '- Word count target',
-      '',
-      'Return ONLY valid JSON with exactly this shape:',
-      '{',
-      '  "recommendedH1": "one compelling, keyword-natural H1",',
-      '  "wordCountTarget": 0,',
-      '  "outline": [',
-      '    { "heading": "H2 or H3 text", "level": "H2" or "H3", "intent": "search intent this section serves", "instructions": "tone, depth, what to include", "keywords": ["primary/secondary keywords assigned to this section"] }',
-      '  ],',
-      '  "faq": [ { "question": "...", "answerGuidance": "..." } ]',
-      '}',
-      'Do not include any text outside this JSON object.'
+      'PIPELINE: (1) Fetch and scrape the top 10 ranking pages for the target keyword. (2) Derive the dominant search intent and the winning content format. (3) Produce a recommended H1 plus 2-3 strong alternative titles. (4) Build an intent-mapped H2/H3 outline where every section has clear writer instructions and target keywords. (5) Compile a People-Also-Ask style FAQ list with answer guidance. (6) Set a word-count target justified by SERP benchmarks.',
+      'Map the deliverables into the final report: put the recommended H1 and alternative titles in the "articles" array (title, summary describing the angle, relevanceScore, intent and tags). Put every outline section in "actionPlan" — phase is the H2 heading and actions are the writer instructions, target keywords and any H3 subheadings for that section. Put FAQ questions with answer guidance in "recommendations". Put word-count target and SERP benchmarks in "metrics". Put intent and format findings in "insights". List the analyzed (simulated) top-ranking URLs in "citations". Set "intentDistribution" to the intent mix across the top 10 pages. Leave "keywords" as an empty array unless section target keywords are worth surfacing there.'
     )
   }
-  return lines.join('\n')
+
+  lines.push(...REPORT_SCHEMA_LINES)
+  return lines.filter((l) => l !== '').concat('').join('\n')
 }
 
-function num(v: unknown, fallback = 0): number {
-  return typeof v === 'number' && Number.isFinite(v) ? v : fallback
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return typeof v === 'object' && v !== null && !Array.isArray(v)
 }
 
-function str(v: unknown, fallback = ''): string {
+function asString(v: unknown, fallback = ''): string {
   return typeof v === 'string' ? v : fallback
 }
 
-function strArr(v: unknown): string[] {
+function asNumber(v: unknown, fallback = 0): number {
+  if (typeof v === 'number' && Number.isFinite(v)) return v
+  if (typeof v === 'string') {
+    const n = Number(v)
+    if (Number.isFinite(n)) return n
+  }
+  return fallback
+}
+
+function clampScore(n: number): number {
+  return Math.min(Math.max(n, 0), 100)
+}
+
+function asStringArray(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []
 }
 
-function recArr(v: unknown): Record<string, unknown>[] {
-  if (!Array.isArray(v)) return []
-  return v.filter((x): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x))
-}
-
-function clamp(v: number, min: number, max: number): number {
-  return Math.min(Math.max(v, min), max)
+function asRecordArray(v: unknown): Record<string, unknown>[] {
+  return Array.isArray(v) ? v.filter(isRecord) : []
 }
 
 function toTrend(v: unknown): TrendDirection {
-  return v === 'up' || v === 'down' || v === 'flat' ? v : 'flat'
+  return v === 'up' || v === 'down' ? v : 'flat'
 }
 
 function toPriority(v: unknown): PriorityLevel {
-  return v === 'high' || v === 'medium' || v === 'low' ? v : 'medium'
+  return v === 'high' || v === 'low' ? v : 'medium'
 }
 
 function toDifficulty(v: unknown): DifficultyLevel {
-  return v === 'easy' || v === 'medium' || v === 'hard' ? v : 'medium'
-}
-
-function toMetrics(v: unknown): MetricItem[] {
-  return recArr(v).map((m) => ({
-    label: str(m.label, 'Metric'),
-    value: str(m.value, typeof m.value === 'number' ? String(m.value) : '—'),
-    trend: toTrend(m.trend),
-    context: str(m.context),
-  }))
-}
-
-function toInsights(v: unknown): InsightItem[] {
-  return recArr(v).map((i) => ({
-    title: str(i.title, 'Insight'),
-    description: str(i.description),
-    impactScore: clamp(num(i.impactScore, 60), 0, 100),
-    confidence: clamp(num(i.confidence, 70), 0, 100),
-  }))
-}
-
-function toRecommendations(v: unknown): RecommendationItem[] {
-  return recArr(v).map((r) => ({
-    title: str(r.title, 'Recommendation'),
-    description: str(r.description),
-    priority: toPriority(r.priority),
-    impact: str(r.impact, '—'),
-    difficulty: toDifficulty(r.difficulty),
-  }))
-}
-
-function toKeywords(v: unknown): KeywordRow[] {
-  return recArr(v).map((k) => ({
-    keyword: str(k.keyword, 'keyword'),
-    cluster: str(k.cluster, '—'),
-    intent: str(k.intent, '—'),
-    volumeEstimate: str(k.volumeEstimate, typeof k.volumeEstimate === 'number' ? String(k.volumeEstimate) : '—'),
-    difficulty: str(k.difficulty, typeof k.difficulty === 'number' ? String(k.difficulty) : '—'),
-    opportunityScore: clamp(num(k.opportunityScore, 50), 0, 100),
-  }))
-}
-
-function toArticles(v: unknown): ArticleIdea[] {
-  return recArr(v).map((a) => ({
-    title: str(a.title, 'Article idea'),
-    summary: str(a.summary),
-    relevanceScore: clamp(num(a.relevanceScore, 60), 0, 100),
-    intent: str(a.intent, 'informational'),
-    tags: strArr(a.tags),
-  }))
-}
-
-function toChart(v: unknown): ChartDatum[] {
-  return recArr(v).map((d) => ({ label: str(d.label, '—'), value: num(d.value) }))
-}
-
-function toPhases(v: unknown): TimelinePhase[] {
-  return recArr(v).map((p) => ({ phase: str(p.phase, 'Phase'), actions: strArr(p.actions) }))
-}
-
-function toCitations(v: unknown): CitationItem[] {
-  return recArr(v).map((c) => ({ source: str(c.source, 'Source'), url: str(c.url), note: str(c.note) }))
-}
-
-function shortlistToReport(obj: Record<string, unknown>): AgentReport | null {
-  const primary = recArr(obj.primary)
-  const secondary = recArr(obj.secondary)
-  if (primary.length === 0 && secondary.length === 0) return null
-
-  const rows = (items: Record<string, unknown>[], cluster: 'Primary' | 'Secondary'): KeywordRow[] =>
-    items.map((k) => {
-      const difficulty = num(k.difficulty)
-      const volume = num(k.volume)
-      return {
-        keyword: str(k.keyword, 'keyword'),
-        cluster,
-        intent: cluster.toLowerCase(),
-        volumeEstimate: `${volume.toLocaleString('en-US')}/mo`,
-        difficulty: difficulty >= 60 ? 'high' : difficulty >= 30 ? 'medium' : 'low',
-        opportunityScore: clamp(100 - difficulty, 5, 98),
-      }
-    })
-
-  const keywords = [...rows(primary, 'Primary'), ...rows(secondary, 'Secondary')]
-  const all = [...primary, ...secondary]
-  const avgVolume = all.length > 0 ? Math.round(all.reduce((s, k) => s + num(k.volume), 0) / all.length) : 0
-  const avgDifficulty = all.length > 0 ? Math.round(all.reduce((s, k) => s + num(k.difficulty), 0) / all.length) : 0
-
-  const metrics: MetricItem[] = [
-    { label: 'Primary keywords', value: String(primary.length), trend: 'flat', context: 'Distinct primary targets shortlisted' },
-    { label: 'Secondary keywords', value: String(secondary.length), trend: 'flat', context: 'Supporting cluster keywords' },
-    { label: 'Avg. est. volume', value: `${avgVolume.toLocaleString('en-US')}/mo`, trend: 'up', context: 'Average across the shortlist (estimate)' },
-    { label: 'Avg. difficulty', value: String(avgDifficulty), trend: 'flat', context: '0-100 keyword difficulty (estimate)' },
-  ]
-
-  const insights: InsightItem[] = primary.map((k) => ({
-    title: `Primary target: ${str(k.keyword, 'keyword')}`,
-    description: str(k.reason, 'Selected by AI shortlisting for semantic alignment, intent fit and differentiation.'),
-    impactScore: clamp(100 - num(k.difficulty), 5, 98),
-    confidence: 82,
-  }))
-
-  const recommendations: RecommendationItem[] = primary.map((k) => {
-    const difficulty = num(k.difficulty)
-    const level: DifficultyLevel = difficulty >= 60 ? 'hard' : difficulty >= 30 ? 'medium' : 'easy'
-    return {
-      title: `Build pillar content for “${str(k.keyword, 'keyword')}”`,
-      description: str(k.reason, 'Target this primary keyword with a dedicated page supported by the secondary cluster.'),
-      priority: 'high' as PriorityLevel,
-      impact: `~${num(k.volume).toLocaleString('en-US')} est. monthly searches`,
-      difficulty: level,
-    }
-  })
-
-  return {
-    title: 'Keyword Shortlist',
-    executiveSummary: `The autonomous 5-step keyword pipeline (query variants → SERP fetch → URL scoring → keyword pull → AI shortlisting) selected ${primary.length} primary and ${secondary.length} secondary keywords. Primary targets were chosen for semantic alignment, intent fit and distinct angles; secondary keywords support the topic cluster with a mix of head, mid-tail and long-tail terms. Volumes and difficulties are estimates.`,
-    confidenceScore: 82,
-    metrics,
-    insights,
-    recommendations,
-    keywords,
-    actionPlan: [],
-    citations: [],
-  }
-}
-
-function contentBriefToReport(obj: Record<string, unknown>): AgentReport | null {
-  const sections = recArr(obj.sections)
-  const bench = (
-    typeof obj.wordCountBenchmark === 'object' && obj.wordCountBenchmark !== null && !Array.isArray(obj.wordCountBenchmark)
-      ? obj.wordCountBenchmark
-      : {}
-  ) as Record<string, unknown>
-  const semanticKeywords = strArr(obj.semanticKeywords)
-  const contentGaps = strArr(obj.contentGaps)
-  if (sections.length === 0 && semanticKeywords.length === 0 && contentGaps.length === 0) return null
-
-  const metrics: MetricItem[] = [
-    { label: 'Recommended length', value: `${num(bench.recommended).toLocaleString('en-US')} words`, trend: 'up', context: 'Target word count to compete (estimate)' },
-    { label: 'Median top-10 length', value: `${num(bench.median).toLocaleString('en-US')} words`, trend: 'flat', context: 'Median across the ranking pages (estimate)' },
-    { label: 'Word count range', value: `${num(bench.min).toLocaleString('en-US')}–${num(bench.max).toLocaleString('en-US')}`, trend: 'flat', context: 'Min–max of the top-ranking pages (estimate)' },
-    { label: 'Content gaps found', value: String(contentGaps.length), trend: 'up', context: 'Topics/questions competitors answer that must be covered' },
-  ]
-
-  const insights: InsightItem[] = sections.map((s) => ({
-    title: str(s.heading, 'Section'),
-    description: `${str(s.notes, 'Cover this section thoroughly.')}${str(s.frequency) ? ` (${str(s.frequency)})` : ''}`,
-    impactScore: 75,
-    confidence: 78,
-  }))
-
-  const recommendations: RecommendationItem[] = contentGaps.map((gap) => ({
-    title: gap.length > 80 ? `${gap.slice(0, 77)}…` : gap,
-    description: 'Competitors do not fully answer this — address it explicitly in the article.',
-    priority: 'high' as PriorityLevel,
-    impact: 'Closes a competitive content gap',
-    difficulty: 'medium' as DifficultyLevel,
-  }))
-
-  const keywords: KeywordRow[] = semanticKeywords.map((k) => ({
-    keyword: k,
-    cluster: 'Semantic / entity',
-    intent: 'informational',
-    volumeEstimate: '—',
-    difficulty: '—',
-    opportunityScore: 60,
-  }))
-
-  const actionPlan: TimelinePhase[] =
-    sections.length > 0
-      ? [{ phase: 'Recommended article structure', actions: sections.map((s) => str(s.heading, 'Section')) }]
-      : []
-
-  return {
-    title: 'Content Research Brief',
-    executiveSummary: `SERP analysis of the top-ranking pages produced ${sections.length} recommended sections, ${semanticKeywords.length} semantic keywords/entities and ${contentGaps.length} content gaps. Target roughly ${num(bench.recommended).toLocaleString('en-US')} words to be competitive with the current top results.`,
-    confidenceScore: 80,
-    metrics,
-    insights,
-    recommendations,
-    keywords: keywords.length > 0 ? keywords : undefined,
-    actionPlan,
-    citations: [],
-  }
-}
-
-function articleBriefToReport(obj: Record<string, unknown>): AgentReport | null {
-  const outline = recArr(obj.outline)
-  const faq = recArr(obj.faq)
-  const h1 = str(obj.recommendedH1, 'Article Brief')
-  const wordCountTarget = num(obj.wordCountTarget)
-  if (outline.length === 0 && faq.length === 0) return null
-
-  const metrics: MetricItem[] = [
-    { label: 'Word count target', value: `${wordCountTarget.toLocaleString('en-US')} words`, trend: 'flat', context: 'Recommended article length (estimate)' },
-    { label: 'Outline sections', value: String(outline.length), trend: 'flat', context: 'H2/H3 sections mapped to search intent' },
-    { label: 'FAQ questions', value: String(faq.length), trend: 'up', context: 'Extracted from PAA / competitor patterns' },
-  ]
-
-  const insights: InsightItem[] = outline.map((s) => {
-    const kws = strArr(s.keywords)
-    return {
-      title: `${str(s.level, 'H2')}: ${str(s.heading, 'Section')}`,
-      description: `${str(s.instructions, 'Write this section per the brief.')}${kws.length > 0 ? ` Keywords: ${kws.join(', ')}.` : ''}`,
-      impactScore: 76,
-      confidence: 80,
-    }
-  })
-
-  const recommendations: RecommendationItem[] = faq.map((f) => ({
-    title: str(f.question, 'FAQ question'),
-    description: str(f.answerGuidance, 'Answer concisely in the FAQ section.'),
-    priority: 'medium' as PriorityLevel,
-    impact: 'Captures PAA / FAQ visibility',
-    difficulty: 'easy' as DifficultyLevel,
-  }))
-
-  const keywordRows: KeywordRow[] = outline.flatMap((s) =>
-    strArr(s.keywords).map((k) => ({
-      keyword: k,
-      cluster: str(s.heading, 'Section'),
-      intent: str(s.intent, 'informational'),
-      volumeEstimate: '—',
-      difficulty: '—',
-      opportunityScore: 65,
-    }))
-  )
-
-  const actionPlan: TimelinePhase[] =
-    outline.length > 0
-      ? [{ phase: 'Ready-to-write outline', actions: outline.map((s) => `${str(s.level, 'H2')}: ${str(s.heading, 'Section')}`) }]
-      : []
-
-  return {
-    title: h1,
-    executiveSummary: `Complete, ready-to-write article brief for “${h1}”. Target roughly ${wordCountTarget.toLocaleString('en-US')} words across ${outline.length} intent-mapped outline sections, with ${faq.length} FAQ questions extracted from PAA and competitor patterns. Each section carries writing instructions and assigned primary/secondary keywords.`,
-    confidenceScore: 81,
-    metrics,
-    insights,
-    recommendations,
-    keywords: keywordRows.length > 0 ? keywordRows : undefined,
-    actionPlan,
-    citations: [],
-  }
-}
-
-function normalizeReport(obj: Record<string, unknown>): AgentReport | null {
-  if (typeof obj.title !== 'string' || typeof obj.executiveSummary !== 'string') return null
-  const keywords = toKeywords(obj.keywords)
-  const articles = toArticles(obj.articles)
-  const intentDistribution = toChart(obj.intentDistribution)
-  return {
-    title: obj.title,
-    executiveSummary: obj.executiveSummary,
-    confidenceScore: clamp(num(obj.confidenceScore, 70), 0, 100),
-    metrics: toMetrics(obj.metrics),
-    insights: toInsights(obj.insights),
-    recommendations: toRecommendations(obj.recommendations),
-    keywords: keywords.length > 0 ? keywords : undefined,
-    articles: articles.length > 0 ? articles : undefined,
-    intentDistribution: intentDistribution.length > 0 ? intentDistribution : undefined,
-    actionPlan: toPhases(obj.actionPlan),
-    citations: toCitations(obj.citations),
-  }
+  return v === 'easy' || v === 'hard' ? v : 'medium'
 }
 
 /**
- * Parses any agent output into the unified AgentReport used by the report UI.
- * Supports four shapes:
- * 1. Keyword Research shortlist (SP-2): { primary, secondary }
- * 2. Content Research brief (SP-3): { sections, wordCountBenchmark, semanticKeywords, contentGaps }
- * 3. Article Recommendation brief (SP-4): { recommendedH1, wordCountTarget, outline, faq }
- * 4. Legacy/direct AgentReport JSON (kept for existing execution history rows)
+ * Parses and validates raw model output into a typed AgentReport.
+ * Returns null when the payload is not valid JSON or is missing the
+ * required title/executiveSummary fields.
  */
-export function parseAgentReport(output: string): AgentReport | null {
-  let raw: unknown
+export function parseAgentReport(raw: string): AgentReport | null {
   try {
-    raw = JSON.parse(output)
+    let text = raw.trim()
+    if (text.startsWith('```')) {
+      text = text.replace(/^```[a-zA-Z]*\s*/, '').replace(/```\s*$/, '').trim()
+    }
+    const parsedUnknown: unknown = JSON.parse(text)
+    if (!isRecord(parsedUnknown)) return null
+    const parsed = parsedUnknown
+
+    const title = asString(parsed.title).trim()
+    const executiveSummary = asString(parsed.executiveSummary).trim()
+    if (!title || !executiveSummary) return null
+
+    const metrics: MetricItem[] = asRecordArray(parsed.metrics)
+      .map((m) => ({
+        label: asString(m.label),
+        value: asString(m.value),
+        trend: toTrend(m.trend),
+        context: asString(m.context),
+      }))
+      .filter((m) => m.label.length > 0)
+
+    const insights: InsightItem[] = asRecordArray(parsed.insights)
+      .map((i) => ({
+        title: asString(i.title),
+        description: asString(i.description),
+        impactScore: clampScore(asNumber(i.impactScore, 50)),
+        confidence: clampScore(asNumber(i.confidence, 50)),
+      }))
+      .filter((i) => i.title.length > 0)
+
+    const recommendations: RecommendationItem[] = asRecordArray(parsed.recommendations)
+      .map((r) => ({
+        title: asString(r.title),
+        description: asString(r.description),
+        priority: toPriority(r.priority),
+        impact: asString(r.impact),
+        difficulty: toDifficulty(r.difficulty),
+      }))
+      .filter((r) => r.title.length > 0)
+
+    const keywords: KeywordRow[] = asRecordArray(parsed.keywords)
+      .map((k) => ({
+        keyword: asString(k.keyword),
+        cluster: asString(k.cluster),
+        intent: asString(k.intent),
+        volumeEstimate: asString(k.volumeEstimate, String(asNumber(k.volumeEstimate, 0))),
+        difficulty: asString(k.difficulty, String(asNumber(k.difficulty, 0))),
+        opportunityScore: clampScore(asNumber(k.opportunityScore, 50)),
+      }))
+      .filter((k) => k.keyword.length > 0)
+
+    const articles: ArticleIdea[] = asRecordArray(parsed.articles)
+      .map((a) => ({
+        title: asString(a.title),
+        summary: asString(a.summary),
+        relevanceScore: clampScore(asNumber(a.relevanceScore, 50)),
+        intent: asString(a.intent),
+        tags: asStringArray(a.tags),
+      }))
+      .filter((a) => a.title.length > 0)
+
+    const intentDistribution: ChartDatum[] = asRecordArray(parsed.intentDistribution)
+      .map((d) => ({
+        label: asString(d.label),
+        value: asNumber(d.value, 0),
+      }))
+      .filter((d) => d.label.length > 0)
+
+    const actionPlan: TimelinePhase[] = asRecordArray(parsed.actionPlan)
+      .map((p) => ({
+        phase: asString(p.phase),
+        actions: asStringArray(p.actions),
+      }))
+      .filter((p) => p.phase.length > 0)
+
+    const citations: CitationItem[] = asRecordArray(parsed.citations)
+      .map((c) => ({
+        source: asString(c.source),
+        url: asString(c.url),
+        note: asString(c.note),
+      }))
+      .filter((c) => c.source.length > 0)
+
+    const report: AgentReport = {
+      title,
+      executiveSummary,
+      confidenceScore: clampScore(asNumber(parsed.confidenceScore, 70)),
+      metrics,
+      insights,
+      recommendations,
+      actionPlan,
+      citations,
+    }
+    if (keywords.length > 0) report.keywords = keywords
+    if (articles.length > 0) report.articles = articles
+    if (intentDistribution.length > 0) report.intentDistribution = intentDistribution
+    return report
   } catch {
     return null
   }
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null
-  const obj = raw as Record<string, unknown>
-  if (Array.isArray(obj.primary) || Array.isArray(obj.secondary)) return shortlistToReport(obj)
-  if (Array.isArray(obj.sections) && typeof obj.wordCountBenchmark === 'object' && obj.wordCountBenchmark !== null) {
-    return contentBriefToReport(obj)
-  }
-  if (typeof obj.recommendedH1 === 'string' && Array.isArray(obj.outline)) return articleBriefToReport(obj)
-  return normalizeReport(obj)
 }

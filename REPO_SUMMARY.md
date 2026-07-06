@@ -1,24 +1,22 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-06T08:57:40.731Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-06T10:08:51.578Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio agent suite for keyword research, content research and article recommendations, with background job execution, notifications and encrypted API key storage.
+INTELLIGENCE by Position2 — a premium AI platform for keyword research, content research and article recommendations with background agent jobs, notifications and execution history.
 
 **Repository:** `arenaintelligence`  
-**File count:** 63
+**File count:** 64
 
 ## Features
 
-- Keyword Research agent with 5-step shortlisting pipeline
-- Content Research agent producing writer-ready SERP briefs
-- Article Recommendation agent generating full article briefs
-- Background job execution with recovery, cancel and retry
-- In-app notification center with toasts
+- Three specialized AI agents (keyword research, content research, article recommendation)
+- Background job execution with progress, retry, cancel and recovery
 - Encrypted OpenAI API key storage (AES-256-GCM)
-- Execution history with CSV/Markdown/JSON exports
-- JWT session auth with httpOnly cookies
+- JWT httpOnly cookie authentication
+- Execution history with structured report viewer and CSV/Markdown/JSON exports
+- Notification center with polling and toasts
 
 ## Tech Stack
 
@@ -45,12 +43,12 @@ INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio age
 
 ## Database Models
 
+- `AppSetting`
 - `User`
 - `Setting`
 - `Execution`
 - `Notification`
 - `AgentJob`
-- `AppSetting`
 
 ## File Inventory
 
@@ -60,6 +58,7 @@ INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio age
 - `app/agents/content-research/page.tsx`
 - `app/agents/keyword-research/page.tsx`
 - `app/dashboard/page.tsx`
+- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -131,13 +130,14 @@ INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio age
 
 ### Other
 
+- `DISCREPANCY_REPORT.md`
 - `README.md`
 - `REPO_SUMMARY.md`
-- `public/logo-mark.svg`
 
 ## Complete File Index
 
 - `.env.example`
+- `DISCREPANCY_REPORT.md`
 - `README.md`
 - `REPO_SUMMARY.md`
 - `app/agents/article-recommendation/page.tsx`
@@ -150,6 +150,7 @@ INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio age
 - `app/api/auth/register/route.ts`
 - `app/api/settings/api-key/route.ts`
 - `app/dashboard/page.tsx`
+- `app/error.tsx`
 - `app/globals.css`
 - `app/history/page.tsx`
 - `app/layout.tsx`
@@ -197,266 +198,48 @@ INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio age
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
-- `public/logo-mark.svg`
 - `tailwind.config.ts`
 - `tsconfig.json`
 
 ## Latest Change
 
-- **Updated at:** 2026-07-06T08:57:40.731Z
-- **Request:** # P2 SEO Agents — System Prompts, Inputs & Logic
-
-> **Source:** `/p2/seo` in `intelligence-platform` embeds tools from **SEO Studio**
-> **Backend:** `https://seo-apps-production-37a6.up.railway.app` (private repo: `github.com/ai-positon2/seo-apps`)
-> **Generated:** 2026-07-06
-
----
-
-## Architecture
-
-```
-User (Position2 staff)
-    │
-    ▼
-/p2/seo                    ← intelligence-platform (Flask)
-    │
-    ▼
-/p2/seo/<tool_slug>        ← embed.html iframe
-    │
-    ▼
-https://seo-apps-production-37a6.up.railway.app/<path>?pt=<SERP_PLATFORM_TOKEN>
-    │
-    ▼
-Express API + React frontend (seo-apps)
-    ├── SERP / scrape / SEMrush / DataForSEO / PageSpeed APIs
-    ├── OpenAI (gpt-4o, gpt-4o-mini, gpt-4.1-mini, gpt-5.4-mini, gpt-4o-mini-search-preview)
-    └── Knowledge Base markdown files (injected into AI context)
-```
-
-### Platform wiring (`app.py`)
-
-| Item | Value |
-|------|-------|
-| Route list | `GET /p2/seo` → tool grid; `GET /p2/seo/<tool_slug>` → iframe embed |
-| Tool manifest | Fetched from `{SERP_BASE}/tools.json` (5 min cache); falls back to `_SEO_TOOLS_FALLBACK` |
-| Auth passthrough | `?pt=<SERP_PLATFORM_TOKEN>` appended to embed URL |
-| SERP base URL | `https://seo-apps-production-37a6.up.railway.app` |
-
-### Public `/app` aliases (same backend tools, different marketing names)
-
-| Public slug | SEO Studio slug |
-|-------------|-----------------|
-| `keyword-compass` | `keyword-research` |
-| `brief-architect` | `article-recommendation` |
-| `content-alchemist` | `article-enhancement` |
-
----
-
-## Shared concepts
-
-### Knowledge Base (KB) injection
-
-Three research tools expose a **client selector** that auto-injects KB context into AI calls:
-
-- `keyword-research`
-- `content-research`
-- `article-recommendation`
-
-**API fields (when client selected):**
-
-```json
-{
-  "client": "gentle-dental",
-  "feedbackKbIds": ["gentle-dental-feedback-2026-q2"]
-}
-```
-
-**Available clients:** `global`, `gentle-dental`, `great-lakes`, `riccobene`, `clear-behavioral-health`, `neuro-wellness-spa`, `new-life-house`
-
-**KB categories:** `industry`, `brand`, `client-feedback`, `best-practices`
-
-**KB API:** `GET /api/kb`, `GET /api/kb/<id>` — returns `meta` + `body` (markdown)
-
-**Linked modules example:** `dental-service-organizations` KB links to `content-research`, `keyword-research`
-
-### Models referenced in SEO Studio
-
-| Model | Used for |
-|-------|----------|
-| `gpt-4o` | Agent Readiness CMO brief, Image Alt vision (hero banners) |
-| `gpt-4o-mini` | Article Enhancement fanout |
-| `gpt-4.1-mini` | Article Enhancement fanout |
-| `gpt-5.4-mini` | Article Enhancement fanout |
-| `gpt-4o-mini-search-preview` | Article Enhancement fanout |
-
-### How system prompts are assembled
-
-Every AI call in SEO Studio follows this pattern:
-
-```
-messages = [
-  { role: "system", content: <TOOL_SYSTEM_PROMPT> + <INJECTED_KB_MARKDOWN> },
-  { role: "user",   content: <STRUCTURED_INPUT_JSON_OR_TEXT> }
-]
-```
-
-KB injection happens when `client` / `feedbackKbIds` / `kbId` is set — the matching markdown from `/api/kb/<id>` is appended to the system message.
-
----
-
-## System Prompts Reference
-
-Full system prompts used by each AI-powered agent.
-
----
-
-### SP-1: Keyword Research — Query Variants
-
-**When:** Step `variants`
-**Model:** OpenAI (backend default)
-
-```
-You are an expert SEO keyword strategist.
-
-Given a seed keyword and a search intent (commercial or informational), generate 5–6 query variants that real users would type into Google.
-
-If intent is commercial: focus on service pages, pricing, booking, "near me", comparison, and consultation queries.
-If intent is informational: focus on guides, FAQs, how-to, symptoms, definitions, and educational queries.
-
-Include the original seed keyword as the first variant.
-
-Return ONLY valid JSON:
-{
-  "queries": ["variant 1", "variant 2", ...]
-}
-```
-
-**User message template:**
-
-```json
-{
-  "keyword": "<seed keyword>",
-  "intent": "commercial | informational"
-}
-```
-
----
-
-### SP-2: Keyword Research — AI Shortlisting
-
-**When:** Step `analysis`
-**Model:** OpenAI (backend default)
-**KB injected:** `keyword-research-bp`, industry KB, client brand KB, `feedbackKbIds`
-
-```
-You are an expert SEO keyword analyst working for a digital marketing agency.
-
-You will receive a deduplicated pool of keywords pulled from SEMrush for the top-ranking competitor pages of a target topic. Each keyword includes volume, difficulty, position, and source URL.
-
-Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords for a content/SEO campaign.
-
-PRIMARY keyword rules:
-- Must semantically match the seed topic and stated intent (commercial or informational)
-- Must represent distinct angles (do not pick near-duplicates)
-- Include a one-sentence "reason" explaining semantic alignment, intent fit, and differentiation
-- Prefer keywords with meaningful search volume and rankable difficulty
-
-SECONDARY keyword rules:
-- Support the primary topic cluster
-- Mix head terms, mid-tail, and long-tail
-- Include volume and difficulty for each
-- Do not repeat primary keywords
-
-Exclude branded competitor names unless the client is that brand.
-Exclude keywords with no meaningful connection to the seed topic.
-
-Return ONLY valid JSON:
-{
-  "primary": [
-    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." },
-    { "keyword": "...", "volume": 0, "difficulty": 0, "reason": "..." }
-  ],
-  "secondary": [
-    { "keyword": "...", "volume": 0, "difficulty": 0 }
-  ]
-}
-```
-
-**User message template:**
-
-```json
-{
-  "seedKeyword": "<keyword>",
-  "intent": "commercial | informational",
-  "allKeywords": [ { "keyword": "...", "volume": 0, "difficulty": 0, "position": 0, "sourceUrl": "..." } ],
-  "competitorUrls": [ "..." ]
-}
-```
-
----
-
-### SP-3: Content Research — SERP Analysis
-
-**When:** `POST /api/analyze`
-**KB injected:** `article-creation`, industry KB, client brand KB, `feedbackKbIds`
-
-```
-You are a senior SEO content strategist.
-
-Analyze the provided scraped content from the top-ranking pages for a target keyword. Produce a content research brief a writer can act on immediately.
-
-Focus on:
-1. Common H2/H3 patterns across ranking pages
-2. Word count benchmarks (min, max, median, recommended target)
-3. Semantic keywords and entities the top pages cover
-4. Content gaps — topics/questions competitors answer that should be included
-5. Recommended article structure (section-by-section)
-
-Respect any client brand voice, compliance rules, and terminology in the KNOWLEDGE BASE section below.
-
-Return ONLY valid JSON:
-{
-  "sections": [
-    {
-      "heading": "H2 or H3 text",
-      "frequency": "how many top pages use this",
-      "notes": "what to cover in this section"
-    }
-  ],
-  "wordCountBenchmark": {
-    "min": 0, "max": 0, "median": 0, "recommended": 0
-  },
-  "semanticKeywords": ["..."],
-  "contentGaps": ["gap or question to address"]
-}
-```
-
-**User message template:**
-
-```json
-{
-  "keyword": "<target keyword>",
-  "scrapedPages": [ { "url": "...", "title": "...", "content": "...", "headings": [] } ]
-}
-```
-
----
-
-### SP-4: Article Recommendation — Full Brief
-
-**When:** SSE stream step `result`
-**KB injected:** `article-creation`, client/industry KBs
-
-```
-You are an expert SEO content brief architect.
-
-Using the scraped top-10 SERP pages for the target keyword, produce a complete, ready-to-write article brief.
-
-Include:
-- Recommended H1 (one option, compelling, keyword-natural)
-- Full H2/H3 outline mapped to search intent
-- Per-section writing instructions (tone, depth, what to include)
-- Primary and secondary keywords assigned to each section
-- FAQ section: 5–10 questions extracted from PAA/competitor patterns
-- Word count target
-```
+- **Updated at:** 2026-07-06T10:08:51.578Z
+- **Request:** I need you to rebuild my existing website (https://arenaintelligence.vercel.app/) to be an exact, pixel-perfect copy of a reference site: https://intelligence.position2.com/
+
+This is a rebrand/migration — I own both properties — so replicate the reference site's design, layout, and content precisely, matching the current codebase's framework/stack.
+
+Do the following:
+
+1. **Audit the reference site first**
+   - Crawl/inspect every page and route on https://intelligence.position2.com/ (not just the homepage — check nav links, footer links, and any subpages).
+   - For each page, extract: exact copy/text (headings, body copy, CTAs, microcopy, alt text), section order, layout structure, and content hierarchy.
+   - Note fonts (family, weights, sizes), color palette (hex values from computed styles), spacing/padding/margins, border-radius, shadows, and breakpoints for responsive behavior.
+   - Extract all images, icons, logos, and illustrations (or note their dimensions/placement if they can't be downloaded directly), and identify any animations or transitions (scroll effects, hover states, entrance animations).
+   - Capture the exact header/nav structure, footer structure, and any sticky/fixed elements.
+
+2. **Compare against my current site**
+   - Review the existing codebase at arenaintelligence.vercel.app to understand current stack (framework, styling approach, component structure, routing).
+   - Map out a diff: what exists vs. what needs to be added/changed/removed to match the reference.
+
+3. **Rebuild inch-by-inch**
+   - Recreate every page/section in the same order with the same structure.
+   - Match typography exactly (font family — use the same web font or closest licensed equivalent, sizes, weights, line-heights).
+   - Match the color system exactly (create it as CSS variables/design tokens for maintainability).
+   - Match spacing, grid/container widths, and responsive breakpoints (mobile, tablet, desktop) exactly.
+   - Recreate all interactive elements: nav behavior (including mobile menu), buttons, hover/focus states, forms, modals, carousels, accordions, etc.
+   - Recreate animations and transitions as closely as possible.
+   - Replace all text content with the exact copy from the reference site.
+   - Rebuild the footer, header/nav, and any repeated components as reusable components.
+
+4. **Assets**
+   - Use my own hosted versions of images/logos (don't hotlink to the reference site) — flag any assets you can't access so I can supply them.
+   - Optimize images (proper formats, lazy loading) without changing how they appear.
+
+5. **QA pass**
+   - After building, do a side-by-side comparison (viewport-by-viewport) between the reference site and the new build, and list any remaining discrepancies in layout, spacing, copy, or behavior.
+   - Test responsiveness across mobile, tablet, and desktop.
+   - Check for broken links, missing alt text, and accessibility basics (contrast, semantic HTML).
+
+6. **Deliverables**
+   - Updated codebase reflecting the full match.
+   - A short discrepancy report of anything you couldn't replicate exactly and why (e.g., proprietary fonts, inaccessible assets, JS behavior you approximated).

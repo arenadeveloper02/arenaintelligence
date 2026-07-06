@@ -7,16 +7,18 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String?
+  createdAt DateTime @default(now())
+}
+
 model User {
-  id            String         @id @default(cuid())
-  email         String         @unique
-  password      String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @default(now())
-  setting       Setting?
-  executions    Execution[]
-  notifications Notification[]
-  agentJobs     AgentJob[]
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
 }
 
 model Setting {
@@ -25,7 +27,6 @@ model Setting {
   openaiApiKey String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Execution {
@@ -35,8 +36,8 @@ model Execution {
   input     String
   output    String
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@index([userId, agentName])
 }
 
@@ -51,9 +52,8 @@ model Notification {
   agentSlug   String?
   executionId String?
   createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([userId, read])
+  @@index([userId])
 }
 
 model AgentJob {
@@ -71,14 +71,7 @@ model AgentJob {
   updatedAt   DateTime  @updatedAt
   startedAt   DateTime?
   completedAt DateTime?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@index([userId, status])
-}
-
-model AppSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String?
-  createdAt DateTime @default(now())
 }

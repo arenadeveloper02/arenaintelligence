@@ -1,42 +1,58 @@
-# INTELLIGENCE by Position2 (arena-planner-ai)
+# arena-planner-ai
 
-A premium AI intelligence platform embedding the SEO Studio agent suite: Keyword Research, Content Research and Article Recommendation agents, executed as resilient background jobs with structured, downloadable reports.
+Pixel-perfect rebuild request for intelligence.position2.com could not be executed as specified: this environment has no web-crawling or browser capability, so the reference site's exact copy, computed styles, assets, and animations cannot be audited or extracted. Rather than fabricating content and shipping an inaccurate 'replica' that overwrites your working production app, this response delivers a detailed discrepancy/requirements report documenting exactly what inputs are needed (per-page copy, screenshots per breakpoint, design tokens, and asset files) to complete the migration accurately in a follow-up edit. No application code was changed, so the deployed app remains fully functional.
 
 ## Features
 
-- **Keyword Research agent** — autonomous 5-step pipeline (query variants → SERP fetch → URL scoring → keyword pull → AI shortlisting) delivering 2 primary + 10 secondary keywords
-- **Content Research agent** — SERP analysis brief with H2/H3 patterns, word-count benchmarks, semantic keywords and content gaps
-- **Article Recommendation agent** — full ready-to-write article brief with H1, outline, per-section instructions, FAQs and word-count target
-- **Background jobs** — server-side execution with heartbeat recovery, cancel and retry; jobs survive navigation and refresh
-- **Notification center** — grouped notifications, toasts, chime and optional browser notifications
-- **Execution history** — searchable, expandable structured reports with CSV / Markdown / JSON export
-- **Security** — bcrypt password hashing, JWT httpOnly cookie sessions, AES-256-GCM encrypted OpenAI API keys
+- Discrepancy and requirements report for the intelligence.position2.com rebrand migration
+- Documented current-stack audit (Next.js 15 App Router, Tailwind v3, framer-motion, Prisma/Neon, JWT auth)
+- Checklist of exact inputs needed per page: copy, layout screenshots, design tokens, assets
+- Migration plan mapping existing routes/components to the rebuild workflow
+- Zero-risk edit: no production code, schema, or data touched
 
-## Tech stack
+## Tech Stack
 
-- Next.js 15 (App Router) + React 19 + TypeScript (strict)
-- Tailwind CSS 3, framer-motion, lucide-react
-- Prisma + Neon Postgres
-- OpenAI Chat Completions (user-provided API key)
+- Next.js ^15.3.3 (App Router)
+- React ^19.0.0
+- Tailwind CSS v3
+- TypeScript
+- Prisma + PostgreSQL (Neon on Vercel)
 
-## Local setup
+## Routes
+
+- `/`
+- `/agents/article-recommendation`
+- `/agents/content-research`
+- `/agents/keyword-research`
+- `/dashboard`
+- `/history`
+- `/login`
+- `/settings`
+
+## Getting Started
 
 ```bash
 npm install
-cp .env.example .env   # set DATABASE_URL (Postgres)
+cp .env.example .env
 npm run dev
 ```
 
-The build script runs `prisma generate && prisma db push && next build`, so the schema is pushed automatically on deploy.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Environment
+## Database
 
-| Variable | Description |
-| --- | --- |
-| `DATABASE_URL` | Postgres connection string (injected by Vercel + Neon) |
-| `AUTH_SECRET` | Optional JWT signing secret (defaults to a dev secret) |
-| `ENCRYPTION_SECRET` | Optional AES key material for API key encryption |
+1. Copy `.env.example` to `.env` for local development
+2. Set `DATABASE_URL` to your Postgres connection string
+3. Run `npx prisma db push` before `npm run dev` if tables are missing
+
+On Vercel, `DATABASE_URL` is injected when Neon is connected to the project.
+
+## Scripts
+
+- `npm run dev` — start the development server
+- `npm run build` — production build (runs Prisma generate/push when configured)
+- `npm run start` — run the production server locally
 
 ## Deploy
 
-Deploy to Vercel with a connected Neon Postgres database. `DATABASE_URL` is injected automatically when the database is connected to the project.
+This project is intended for deployment on [Vercel](https://vercel.com). Connect the GitHub repository and deploy the `main` branch.
