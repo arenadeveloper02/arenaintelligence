@@ -1,58 +1,42 @@
-# arena-planner-ai
+# INTELLIGENCE by Position2 (arena-planner-ai)
 
-Edited arenaintelligence — the Keyword Research agent now runs a fixed 5-step autonomous pipeline (query variants → SERP fetch → URL scoring → keyword pull → AI shortlisting) with commercial/informational intent, optional client knowledge-base context, and a primary/secondary keyword shortlist output. All other agents and app behavior are unchanged.
+A premium AI intelligence platform embedding the SEO Studio agent suite: Keyword Research, Content Research and Article Recommendation agents, executed as resilient background jobs with structured, downloadable reports.
 
 ## Features
 
-- Autonomous 5-step Keyword Research pipeline with query variants, SERP simulation, competitor URL scoring, keyword pooling and AI shortlisting
-- Keyword Research inputs: seed keyword, intent (commercial | informational), optional client KB slug and feedback KB ids
-- Shortlist output of exactly 2 primary keywords (with reasons) and 10 secondary keywords, rendered in the existing report UI
-- Content Research and Article Recommendation agents unchanged
-- Background job execution, notifications, history and exports continue to work for all agents
+- **Keyword Research agent** — autonomous 5-step pipeline (query variants → SERP fetch → URL scoring → keyword pull → AI shortlisting) delivering 2 primary + 10 secondary keywords
+- **Content Research agent** — SERP analysis brief with H2/H3 patterns, word-count benchmarks, semantic keywords and content gaps
+- **Article Recommendation agent** — full ready-to-write article brief with H1, outline, per-section instructions, FAQs and word-count target
+- **Background jobs** — server-side execution with heartbeat recovery, cancel and retry; jobs survive navigation and refresh
+- **Notification center** — grouped notifications, toasts, chime and optional browser notifications
+- **Execution history** — searchable, expandable structured reports with CSV / Markdown / JSON export
+- **Security** — bcrypt password hashing, JWT httpOnly cookie sessions, AES-256-GCM encrypted OpenAI API keys
 
-## Tech Stack
+## Tech stack
 
-- Next.js ^15.3.3 (App Router)
-- React ^19.0.0
-- Tailwind CSS v3
-- TypeScript
-- Prisma + PostgreSQL (Neon on Vercel)
+- Next.js 15 (App Router) + React 19 + TypeScript (strict)
+- Tailwind CSS 3, framer-motion, lucide-react
+- Prisma + Neon Postgres
+- OpenAI Chat Completions (user-provided API key)
 
-## Routes
-
-- `/`
-- `/agents/article-recommendation`
-- `/agents/content-research`
-- `/agents/keyword-research`
-- `/dashboard`
-- `/history`
-- `/login`
-- `/settings`
-
-## Getting Started
+## Local setup
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.example .env   # set DATABASE_URL (Postgres)
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+The build script runs `prisma generate && prisma db push && next build`, so the schema is pushed automatically on deploy.
 
-## Database
+## Environment
 
-1. Copy `.env.example` to `.env` for local development
-2. Set `DATABASE_URL` to your Postgres connection string
-3. Run `npx prisma db push` before `npm run dev` if tables are missing
-
-On Vercel, `DATABASE_URL` is injected when Neon is connected to the project.
-
-## Scripts
-
-- `npm run dev` — start the development server
-- `npm run build` — production build (runs Prisma generate/push when configured)
-- `npm run start` — run the production server locally
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | Postgres connection string (injected by Vercel + Neon) |
+| `AUTH_SECRET` | Optional JWT signing secret (defaults to a dev secret) |
+| `ENCRYPTION_SECRET` | Optional AES key material for API key encryption |
 
 ## Deploy
 
-This project is intended for deployment on [Vercel](https://vercel.com). Connect the GitHub repository and deploy the `main` branch.
+Deploy to Vercel with a connected Neon Postgres database. `DATABASE_URL` is injected automatically when the database is connected to the project.

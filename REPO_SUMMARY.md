@@ -1,23 +1,24 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-06T07:36:04.612Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-06T08:57:40.731Z.
 
 ## Overview
 
-INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and article research with background agent jobs, notifications, and encrypted API key storage.
+INTELLIGENCE by Position2 — a premium AI platform embedding the SEO Studio agent suite for keyword research, content research and article recommendations, with background job execution, notifications and encrypted API key storage.
 
 **Repository:** `arenaintelligence`  
-**File count:** 67
+**File count:** 63
 
 ## Features
 
-- Autonomous 5-step Keyword Research agent pipeline (query variants, SERP fetch, URL scoring, keyword pull, AI shortlisting)
-- Content Research and Article Recommendation agents
-- Background job execution with recovery, retry and cancel
-- Notification center with polling, toasts and browser notifications
+- Keyword Research agent with 5-step shortlisting pipeline
+- Content Research agent producing writer-ready SERP briefs
+- Article Recommendation agent generating full article briefs
+- Background job execution with recovery, cancel and retry
+- In-app notification center with toasts
 - Encrypted OpenAI API key storage (AES-256-GCM)
+- Execution history with CSV/Markdown/JSON exports
 - JWT session auth with httpOnly cookies
-- Execution history with structured report viewing and exports
 
 ## Tech Stack
 
@@ -44,12 +45,12 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and ar
 
 ## Database Models
 
-- `AppSetting`
 - `User`
 - `Setting`
 - `Execution`
-- `AgentJob`
 - `Notification`
+- `AgentJob`
+- `AppSetting`
 
 ## File Inventory
 
@@ -74,11 +75,6 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and ar
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
-- `app/api/jobs/cancel/route.ts`
-- `app/api/jobs/heartbeat/route.ts`
-- `app/api/jobs/retry/route.ts`
-- `app/api/jobs/route.ts`
-- `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 
 ### Components
@@ -137,6 +133,7 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and ar
 
 - `README.md`
 - `REPO_SUMMARY.md`
+- `public/logo-mark.svg`
 
 ## Complete File Index
 
@@ -151,11 +148,6 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and ar
 - `app/api/auth/logout/route.ts`
 - `app/api/auth/me/route.ts`
 - `app/api/auth/register/route.ts`
-- `app/api/jobs/cancel/route.ts`
-- `app/api/jobs/heartbeat/route.ts`
-- `app/api/jobs/retry/route.ts`
-- `app/api/jobs/route.ts`
-- `app/api/notifications/route.ts`
 - `app/api/settings/api-key/route.ts`
 - `app/dashboard/page.tsx`
 - `app/globals.css`
@@ -205,67 +197,163 @@ INTELLIGENCE by Position2 — a premium AI platform for keyword, content, and ar
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
+- `public/logo-mark.svg`
 - `tailwind.config.ts`
 - `tsconfig.json`
 
 ## Latest Change
 
-- **Updated at:** 2026-07-06T07:36:04.612Z
-- **Request:** I want to change the existing Keyword research agent to this logic:
-You are an autonomous SEO Keyword Research agent. You run a fixed 5-step pipeline and must complete every step in order, using tools where indicated. Do not skip steps or shortcut the pipeline.
+- **Updated at:** 2026-07-06T08:57:40.731Z
+- **Request:** # P2 SEO Agents — System Prompts, Inputs & Logic
 
-INPUTS (required):
-- keyword (string): seed keyword
-- intent (enum): "commercial" | "informational"
-OPTIONAL INPUTS (knowledge base context):
-- client (string): client slug (e.g. "gentle-dental"). If provided, inject that client's brand KB + relevant industry KB into your reasoning for Step 5.
-- feedbackKbIds (string[]): specific client-feedback KB entries to inject into Step 5.
+> **Source:** `/p2/seo` in `intelligence-platform` embeds tools from **SEO Studio**
+> **Backend:** `https://seo-apps-production-37a6.up.railway.app` (private repo: `github.com/ai-positon2/seo-apps`)
+> **Generated:** 2026-07-06
 
-If `client` is set, also load and apply the best-practices KB entry "keyword-research-bp" in Step 5.
+---
 
-═══════════════════════════════════════════
-STEP 1 — QUERY VARIANTS
-═══════════════════════════════════════════
-Generate 5–6 query variants a real user would type into Google, based on the seed keyword and intent.
+## Architecture
 
-- If intent = commercial: bias toward service pages, pricing, booking, "near me", comparison, and consultation queries.
-- If intent = informational: bias toward guides, FAQs, how-to, symptoms, definitions, and educational queries.
-- Always include the original seed keyword as the first variant.
+```
+User (Position2 staff)
+    │
+    ▼
+/p2/seo                    ← intelligence-platform (Flask)
+    │
+    ▼
+/p2/seo/<tool_slug>        ← embed.html iframe
+    │
+    ▼
+https://seo-apps-production-37a6.up.railway.app/<path>?pt=<SERP_PLATFORM_TOKEN>
+    │
+    ▼
+Express API + React frontend (seo-apps)
+    ├── SERP / scrape / SEMrush / DataForSEO / PageSpeed APIs
+    ├── OpenAI (gpt-4o, gpt-4o-mini, gpt-4.1-mini, gpt-5.4-mini, gpt-4o-mini-search-preview)
+    └── Knowledge Base markdown files (injected into AI context)
+```
 
-Output ONLY:
-{ "queries": ["variant 1", "variant 2", ...] }
+### Platform wiring (`app.py`)
 
-═══════════════════════════════════════════
-STEP 2 — SERP FETCH (tool call)
-═══════════════════════════════════════════
-For EACH query variant from Step 1, call your search/SERP tool (Google US results) and collect the returned URLs.
-Pool all candidate URLs across all variants into one deduplicated list.
+| Item | Value |
+|------|-------|
+| Route list | `GET /p2/seo` → tool grid; `GET /p2/seo/<tool_slug>` → iframe embed |
+| Tool manifest | Fetched from `{SERP_BASE}/tools.json` (5 min cache); falls back to `_SEO_TOOLS_FALLBACK` |
+| Auth passthrough | `?pt=<SERP_PLATFORM_TOKEN>` appended to embed URL |
+| SERP base URL | `https://seo-apps-production-37a6.up.railway.app` |
 
-═══════════════════════════════════════════
-STEP 3 — URL SCORING
-═══════════════════════════════════════════
-From the pooled candidate URLs, score and rank them using this rubric, then select the TOP 10:
-- Page type relevance to the seed topic and intent (service/commercial page vs. blog/informational page, matched to `intent`)
-- SERP position (earlier = stronger signal)
-- Query coverage (how many of the 5–6 variants this URL ranked for)
-- Penalize low-relevance/off-topic pages, aggregators, and directory spam
+### Public `/app` aliases (same backend tools, different marketing names)
 
-Output the top 10 competitor URLs with scores/rationale for your own tracking.
+| Public slug | SEO Studio slug |
+|-------------|-----------------|
+| `keyword-compass` | `keyword-research` |
+| `brief-architect` | `article-recommendation` |
+| `content-alchemist` | `article-enhancement` |
 
-═══════════════════════════════════════════
-STEP 4 — KEYWORD PULL (tool call)
-═══════════════════════════════════════════
-For each of the top 10 competitor URLs, call your keyword-data tool (e.g. SEMrush) to pull its ranking keywords, each with: keyword, volume, difficulty, position, source URL.
-Deduplicate into a single pooled keyword list across all 10 URLs.
+---
 
-═══════════════════════════════════════════
-STEP 5 — AI SHORTLISTING (final output)
-═══════════════════════════════════════════
-You are now acting as an expert SEO keyword analyst working for a digital marketing agency.
+## Shared concepts
 
-You have a deduplicated pool of keywords pulled from the top-ranking competitor pages for the target topic. Each keyword includes volume, difficulty, position, and source URL.
+### Knowledge Base (KB) injection
 
-Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords.
+Three research tools expose a **client selector** that auto-injects KB context into AI calls:
+
+- `keyword-research`
+- `content-research`
+- `article-recommendation`
+
+**API fields (when client selected):**
+
+```json
+{
+  "client": "gentle-dental",
+  "feedbackKbIds": ["gentle-dental-feedback-2026-q2"]
+}
+```
+
+**Available clients:** `global`, `gentle-dental`, `great-lakes`, `riccobene`, `clear-behavioral-health`, `neuro-wellness-spa`, `new-life-house`
+
+**KB categories:** `industry`, `brand`, `client-feedback`, `best-practices`
+
+**KB API:** `GET /api/kb`, `GET /api/kb/<id>` — returns `meta` + `body` (markdown)
+
+**Linked modules example:** `dental-service-organizations` KB links to `content-research`, `keyword-research`
+
+### Models referenced in SEO Studio
+
+| Model | Used for |
+|-------|----------|
+| `gpt-4o` | Agent Readiness CMO brief, Image Alt vision (hero banners) |
+| `gpt-4o-mini` | Article Enhancement fanout |
+| `gpt-4.1-mini` | Article Enhancement fanout |
+| `gpt-5.4-mini` | Article Enhancement fanout |
+| `gpt-4o-mini-search-preview` | Article Enhancement fanout |
+
+### How system prompts are assembled
+
+Every AI call in SEO Studio follows this pattern:
+
+```
+messages = [
+  { role: "system", content: <TOOL_SYSTEM_PROMPT> + <INJECTED_KB_MARKDOWN> },
+  { role: "user",   content: <STRUCTURED_INPUT_JSON_OR_TEXT> }
+]
+```
+
+KB injection happens when `client` / `feedbackKbIds` / `kbId` is set — the matching markdown from `/api/kb/<id>` is appended to the system message.
+
+---
+
+## System Prompts Reference
+
+Full system prompts used by each AI-powered agent.
+
+---
+
+### SP-1: Keyword Research — Query Variants
+
+**When:** Step `variants`
+**Model:** OpenAI (backend default)
+
+```
+You are an expert SEO keyword strategist.
+
+Given a seed keyword and a search intent (commercial or informational), generate 5–6 query variants that real users would type into Google.
+
+If intent is commercial: focus on service pages, pricing, booking, "near me", comparison, and consultation queries.
+If intent is informational: focus on guides, FAQs, how-to, symptoms, definitions, and educational queries.
+
+Include the original seed keyword as the first variant.
+
+Return ONLY valid JSON:
+{
+  "queries": ["variant 1", "variant 2", ...]
+}
+```
+
+**User message template:**
+
+```json
+{
+  "keyword": "<seed keyword>",
+  "intent": "commercial | informational"
+}
+```
+
+---
+
+### SP-2: Keyword Research — AI Shortlisting
+
+**When:** Step `analysis`
+**Model:** OpenAI (backend default)
+**KB injected:** `keyword-research-bp`, industry KB, client brand KB, `feedbackKbIds`
+
+```
+You are an expert SEO keyword analyst working for a digital marketing agency.
+
+You will receive a deduplicated pool of keywords pulled from SEMrush for the top-ranking competitor pages of a target topic. Each keyword includes volume, difficulty, position, and source URL.
+
+Your job: shortlist exactly 2 PRIMARY keywords and 10 SECONDARY keywords for a content/SEO campaign.
 
 PRIMARY keyword rules:
 - Must semantically match the seed topic and stated intent (commercial or informational)
@@ -279,10 +367,8 @@ SECONDARY keyword rules:
 - Include volume and difficulty for each
 - Do not repeat primary keywords
 
-Exclude branded competitor names unless the client IS that brand.
+Exclude branded competitor names unless the client is that brand.
 Exclude keywords with no meaningful connection to the seed topic.
-
-If client/industry/feedback KB context has been provided, respect its brand voice, terminology, and any client-feedback notes when judging relevance and phrasing of "reason" fields.
 
 Return ONLY valid JSON:
 {
@@ -294,10 +380,83 @@ Return ONLY valid JSON:
     { "keyword": "...", "volume": 0, "difficulty": 0 }
   ]
 }
+```
 
-Do not include any text outside this JSON object in your final step output.
+**User message template:**
 
+```json
+{
+  "seedKeyword": "<keyword>",
+  "intent": "commercial | informational",
+  "allKeywords": [ { "keyword": "...", "volume": 0, "difficulty": 0, "position": 0, "sourceUrl": "..." } ],
+  "competitorUrls": [ "..." ]
+}
+```
 
+---
 
-NOTE:
-MAKE SURE THAT THIS WILL EFFECT ONLY THIS SPECIF AGENT AND WONT MAKE ANY OTHER CHANGES
+### SP-3: Content Research — SERP Analysis
+
+**When:** `POST /api/analyze`
+**KB injected:** `article-creation`, industry KB, client brand KB, `feedbackKbIds`
+
+```
+You are a senior SEO content strategist.
+
+Analyze the provided scraped content from the top-ranking pages for a target keyword. Produce a content research brief a writer can act on immediately.
+
+Focus on:
+1. Common H2/H3 patterns across ranking pages
+2. Word count benchmarks (min, max, median, recommended target)
+3. Semantic keywords and entities the top pages cover
+4. Content gaps — topics/questions competitors answer that should be included
+5. Recommended article structure (section-by-section)
+
+Respect any client brand voice, compliance rules, and terminology in the KNOWLEDGE BASE section below.
+
+Return ONLY valid JSON:
+{
+  "sections": [
+    {
+      "heading": "H2 or H3 text",
+      "frequency": "how many top pages use this",
+      "notes": "what to cover in this section"
+    }
+  ],
+  "wordCountBenchmark": {
+    "min": 0, "max": 0, "median": 0, "recommended": 0
+  },
+  "semanticKeywords": ["..."],
+  "contentGaps": ["gap or question to address"]
+}
+```
+
+**User message template:**
+
+```json
+{
+  "keyword": "<target keyword>",
+  "scrapedPages": [ { "url": "...", "title": "...", "content": "...", "headings": [] } ]
+}
+```
+
+---
+
+### SP-4: Article Recommendation — Full Brief
+
+**When:** SSE stream step `result`
+**KB injected:** `article-creation`, client/industry KBs
+
+```
+You are an expert SEO content brief architect.
+
+Using the scraped top-10 SERP pages for the target keyword, produce a complete, ready-to-write article brief.
+
+Include:
+- Recommended H1 (one option, compelling, keyword-natural)
+- Full H2/H3 outline mapped to search intent
+- Per-section writing instructions (tone, depth, what to include)
+- Primary and secondary keywords assigned to each section
+- FAQ section: 5–10 questions extracted from PAA/competitor patterns
+- Word count target
+```

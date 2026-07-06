@@ -179,3 +179,43 @@ export interface KeywordShortlist {
   primary: PrimaryKeywordItem[]
   secondary: SecondaryKeywordItem[]
 }
+
+export interface ContentBriefSection {
+  heading: string
+  frequency: string
+  notes: string
+}
+
+export interface WordCountBenchmark {
+  min: number
+  max: number
+  median: number
+  recommended: number
+}
+
+export interface ContentResearchBrief {
+  sections: ContentBriefSection[]
+  wordCountBenchmark: WordCountBenchmark
+  semanticKeywords: string[]
+  contentGaps: string[]
+}
+
+export interface ArticleBriefSection {
+  heading: string
+  level: string
+  intent: string
+  instructions: string
+  keywords: string[]
+}
+
+export interface ArticleBriefFaq {
+  question: string
+  answerGuidance: string
+}
+
+export interface ArticleBrief {
+  recommendedH1: string
+  wordCountTarget: number
+  outline: ArticleBriefSection[]
+  faq: ArticleBriefFaq[]
+}
