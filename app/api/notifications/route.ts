@@ -1,7 +1,14 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, after } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth'
+import { processJob, recoverStaleJobs } from '@/lib/jobs'
 import type { NotificationData, NotificationType } from '@/lib/types'
+
+export const dynamic = 'force-dynamic'
+export const runtime = 'nodejs'
+// Keep the invocation alive long enough for the after() background executor
+// to finish recovered long-running agent calls, independent of the browser.
+export const maxDuration = 60
 
 function toNotificationData(n: {
   id: string
@@ -35,6 +42,19 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({ notifications: [], unreadCount: 0 }, { status: 401 })
   }
   try {
+    // Self-healing: notification polling happens on every authenticated page,
+    // so use it to re-dispatch any stale queued/running jobs whose executor
+    // was interrupted. This keeps agent execution alive across navigation,
+    // refreshes and closed tabs.
+    const staleIds = await recoverStaleJobs(user.id)
+    if (staleIds.length > 0) {
+      after(async () => {
+        for (const jobId of staleIds) {
+          await processJob(jobId)
+        }
+      })
+    }
+
     const [rows, unreadCount] = await Promise.all([
       prisma.notification.findMany({
         where: { userId: user.id },

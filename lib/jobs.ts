@@ -8,12 +8,13 @@ const RETRY_DELAY_MS = 2000
 
 // A queued job that has not been picked up within this window is considered
 // stale (the serverless invocation that scheduled it was terminated) and is
-// re-dispatched on the next poll of GET /api/jobs.
-const QUEUED_STALE_MS = 20_000
+// re-dispatched on the next poll of GET /api/jobs or GET /api/notifications.
+// Kept short so interrupted jobs resume quickly after navigation/refresh.
+const QUEUED_STALE_MS = 10_000
 
 // A running job whose row has not been touched (no progress heartbeat) within
 // this window is considered orphaned and is re-queued for recovery.
-const RUNNING_STALE_MS = 120_000
+const RUNNING_STALE_MS = 90_000
 
 interface AgentJobRow {
   id: string

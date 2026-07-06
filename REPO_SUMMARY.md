@@ -1,21 +1,22 @@
 # Repository Summary: arena-planner-ai
 
-> Auto-maintained by Sim Development. Last updated: 2026-07-04T07:37:04.997Z.
+> Auto-maintained by Sim Development. Last updated: 2026-07-06T05:26:00.972Z.
 
 ## Overview
 
-AI intelligence platform with background agent execution — jobs persist in the database, survive navigation and refresh, auto-recover if interrupted, and notify the user on completion.
+AI agent platform with background job execution — agents run server-side as persisted jobs that survive navigation, refreshes and closed tabs, with real-time progress, retries, cancellation and notifications.
 
 **Repository:** `arenaintelligence`  
-**File count:** 67
+**File count:** 66
 
 ## Features
 
-- Durable background job system persisted in Postgres (queued → running → completed/failed/cancelled)
-- Automatic stale-job recovery: interrupted executions are re-queued and resumed on the next poll
-- Job execution fully decoupled from page lifecycle using Next.js after() with extended maxDuration
-- Retry, cancel, progress tracking and execution history for every agent run
-- Notifications with badge counts when background jobs finish or fail
+- Background job system persisted in Postgres (queued/running/completed/failed/cancelled)
+- Server-side agent execution decoupled from page lifecycle via after() and self-healing stale-job recovery
+- Running Jobs panel with live progress, retry and cancel
+- Notification center with badge count, toasts and click-through to reports
+- Execution history with downloadable structured reports
+- Encrypted OpenAI API key storage (AES-256-GCM)
 
 ## Tech Stack
 
@@ -45,8 +46,8 @@ AI intelligence platform with background agent execution — jobs persist in the
 - `User`
 - `Setting`
 - `Execution`
-- `Notification`
 - `AgentJob`
+- `Notification`
 
 ## File Inventory
 
@@ -124,7 +125,6 @@ AI intelligence platform with background agent execution — jobs persist in the
 - `middleware.ts`
 - `next-env.d.ts`
 - `next.config.ts`
-- `package-lock.json`
 - `package.json`
 - `postcss.config.mjs`
 - `tailwind.config.ts`
@@ -198,7 +198,6 @@ AI intelligence platform with background agent execution — jobs persist in the
 - `middleware.ts`
 - `next-env.d.ts`
 - `next.config.ts`
-- `package-lock.json`
 - `package.json`
 - `postcss.config.mjs`
 - `prisma/schema.prisma`
@@ -207,7 +206,7 @@ AI intelligence platform with background agent execution — jobs persist in the
 
 ## Latest Change
 
-- **Updated at:** 2026-07-04T07:37:04.997Z
+- **Updated at:** 2026-07-06T05:26:00.972Z
 - **Request:** Fix the AI agent execution lifecycle so that agents continue running in the background even if the user navigates to another page.
 
 Current Behavior:
